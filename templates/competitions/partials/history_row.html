@@ -22,12 +22,14 @@
         {% if submission.public_score is not None %}
         <span class="font-mono font-bold">{{ submission.public_score|floatformat:4 }}</span>
         {% else %}
-        <span class="text-gray-400">-</span>
+        <span class="text-slate-400">-</span>
         {% endif %}
     </td>
     <td>
         {% if submission.is_final_selection %}
-        <span class="badge badge-accent">✓ Final</span>
+        <span class="badge badge-accent">
+            <i data-lucide="check" class="w-3 h-3 mr-1"></i> Final
+        </span>
         {% else %}
         {% if submission.status == 'SUCCESS' %}
         <button class="btn btn-xs btn-outline" hx-post="{% url 'set_final_selection' submission.id %}"
@@ -40,7 +42,7 @@
     </td>
     <td>
         <a href="{{ submission.prediction_file.url }}" class="btn btn-xs btn-ghost" download>
-            📥
+            <i data-lucide="download" class="w-4 h-4"></i>
         </a>
     </td>
 </tr>

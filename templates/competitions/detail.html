@@ -37,7 +37,7 @@
             {% if competition.dataset_url %}
             <div class="mt-4">
                 <a href="{{ competition.dataset_url }}" class="btn btn-outline btn-info" target="_blank">
-                    📥 Download Dataset
+                    <i data-lucide="download" class="w-4 h-4 mr-1"></i> Download Dataset
                 </a>
             </div>
             {% endif %}
@@ -71,9 +71,15 @@
 
     <!-- Tabs -->
     <div role="tablist" class="tabs tabs-boxed bg-base-100 p-1">
-        <a role="tab" class="tab tab-active" id="tab-upload" onclick="showTab('upload')">📤 Upload Predictions</a>
-        <a role="tab" class="tab" id="tab-history" onclick="showTab('history')">📋 Submission History</a>
-        <a role="tab" class="tab" id="tab-leaderboard" onclick="showTab('leaderboard')">🏆 Leaderboard</a>
+        <a role="tab" class="tab tab-active" id="tab-upload" onclick="showTab('upload')">
+            <i data-lucide="upload" class="w-4 h-4 mr-1"></i> Upload Predictions
+        </a>
+        <a role="tab" class="tab" id="tab-history" onclick="showTab('history')">
+            <i data-lucide="list" class="w-4 h-4 mr-1"></i> Submission History
+        </a>
+        <a role="tab" class="tab" id="tab-leaderboard" onclick="showTab('leaderboard')">
+            <i data-lucide="trophy" class="w-4 h-4 mr-1"></i> Leaderboard
+        </a>
     </div>
 
     <!-- Tab content: Upload -->
@@ -94,7 +100,7 @@
                         <input type="file" name="prediction_file" accept=".csv"
                             class="file-input file-input-bordered file-input-primary w-full max-w-md" required />
                         <label class="label">
-                            <span class="label-text-alt text-gray-500">
+                            <span class="label-text-alt text-slate-400">
                                 Format: {{ expected_format }}
                             </span>
                         </label>
@@ -134,7 +140,7 @@
                 <div hx-get="{% url 'submission_history' competition.id %}" hx-trigger="load, every 30s"
                     hx-swap="innerHTML">
                     <div class="flex justify-center py-8">
-                        <span class="loading loading-spinner loading-lg"></span>
+                        <span class="loading loading-spinner loading-lg text-primary"></span>
                     </div>
                 </div>
             </div>
@@ -146,7 +152,7 @@
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
                 <h2 class="card-title">
-                    🏆 Leaderboard
+                    <i data-lucide="trophy" class="w-6 h-6 mr-1"></i> Leaderboard
                     {% if competition.status == 'ENDED' %}
                     <span class="badge badge-accent">Private Score</span>
                     {% else %}

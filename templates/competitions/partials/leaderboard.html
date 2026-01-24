@@ -6,7 +6,7 @@
     <!-- Score Trend Chart -->
     <div class="bg-base-200 rounded-box p-4">
         <h3 class="font-semibold mb-3 flex items-center gap-2">
-            📈 Score Trend
+            <i data-lucide="trending-up" class="w-4 h-4 text-primary"></i> Score Trend
         </h3>
         <div class="h-64">
             <canvas id="trendChart"></canvas>
@@ -16,7 +16,7 @@
     <!-- Score Distribution Chart -->
     <div class="bg-base-200 rounded-box p-4">
         <h3 class="font-semibold mb-3 flex items-center gap-2">
-            📊 Score Distribution
+            <i data-lucide="bar-chart-2" class="w-4 h-4 text-secondary"></i> Score Distribution
         </h3>
         <div class="h-64">
             <canvas id="distributionChart"></canvas>
@@ -41,11 +41,11 @@
             <tr class="{% if entry.is_current_user %}bg-primary/10 font-bold{% endif %}">
                 <td>
                     {% if entry.rank == 1 %}
-                    🥇
+                    <span class="badge badge-warning border-none text-white font-bold bg-yellow-500">1</span>
                     {% elif entry.rank == 2 %}
-                    🥈
+                    <span class="badge badge-ghost border-none text-white font-bold bg-slate-400">2</span>
                     {% elif entry.rank == 3 %}
-                    🥉
+                    <span class="badge badge-error border-none text-white font-bold bg-amber-600">3</span>
                     {% else %}
                     {{ entry.rank }}
                     {% endif %}
@@ -134,7 +134,7 @@
                         }
                     });
                 } else if (trendCtx) {
-                    trendCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">No trend data available</div>';
+                    trendCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400">No trend data available</div>';
                 }
 
                 // Score Distribution Bar Chart
@@ -181,7 +181,7 @@
                         }
                     });
                 } else if (distCtx) {
-                    distCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">No distribution data available</div>';
+                    distCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400">No distribution data available</div>';
                 }
             })
             .catch(err => {
@@ -191,7 +191,7 @@
 </script>
 
 {% else %}
-<div class="text-center py-8 text-gray-500">
+<div class="text-center py-8 text-slate-400">
     No leaderboard data available
 </div>
 {% endif %}

@@ -90,10 +90,10 @@ class CompetitionParticipantAdmin(admin.ModelAdmin):
     @admin.display(description='Status')
     def participation_status(self, obj):
         if not obj.is_active:
-            return format_html('<span style="color: {};">{}</span>', 'gray', '⏸️ Suspended')
+            return format_html('<span style="color: {};">{}</span>', 'gray', '[Suspended]')
         if obj.can_participate():
-            return format_html('<span style="color: {};">{}</span>', 'green', '✅ Active')
-        return format_html('<span style="color: {};">{}</span>', 'orange', '⏰ Out of Window')
+            return format_html('<span style="color: {};">{}</span>', 'green', '[Active]')
+        return format_html('<span style="color: {};">{}</span>', 'orange', '[Out of Window]')
 
 
 class SubmissionLogInline(admin.TabularInline):

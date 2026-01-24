@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="night">
 
 <head>
     <meta charset="UTF-8">
@@ -46,6 +46,9 @@
         }
     </style>
 
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     {% block extra_head %}{% endblock %}
 </head>
 
@@ -54,7 +57,7 @@
     <div class="navbar bg-base-100 shadow-lg">
         <div class="flex-1">
             <a href="{% url 'competition_list' %}" class="btn btn-ghost text-xl">
-                🏆 VNAP Benchmark Platform
+                <i data-lucide="trophy" class="inline-block w-6 h-6 mr-1"></i> VNAP Benchmark Platform
             </a>
         </div>
         <div class="flex-none gap-2">
@@ -68,12 +71,18 @@
                 <ul tabindex="0"
                     class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
                     <li><span class="font-bold">{{ user.username }}</span></li>
-                    <li><a href="{% url 'admin:index' %}">Admin Panel</a></li>
-                    <li><a href="{% url 'logout' %}">Logout</a></li>
+                    <li><a href="{% url 'admin:index' %}">
+                            <i data-lucide="settings" class="w-4 h-4"></i> Admin Panel
+                        </a></li>
+                    <li><a href="{% url 'logout' %}">
+                            <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                        </a></li>
                 </ul>
             </div>
             {% else %}
-            <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+            <a href="{% url 'login' %}" class="btn btn-primary">
+                <i data-lucide="log-in" class="w-4 h-4 mr-1"></i> Login
+            </a>
             {% endif %}
         </div>
     </div>
@@ -98,6 +107,14 @@
     <script>
         document.body.addEventListener('htmx:configRequest', function (event) {
             event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Re-initialize icons after HTMX swaps
+        document.body.addEventListener('htmx:afterOnLoad', function () {
+            lucide.createIcons();
         });
     </script>
 
