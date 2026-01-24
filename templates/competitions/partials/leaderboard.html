@@ -6,7 +6,7 @@
     <!-- Score Trend Chart -->
     <div class="bg-base-200 rounded-box p-4">
         <h3 class="font-semibold mb-3 flex items-center gap-2">
-            📈 分數趨勢
+            📈 Score Trend
         </h3>
         <div class="h-64">
             <canvas id="trendChart"></canvas>
@@ -16,7 +16,7 @@
     <!-- Score Distribution Chart -->
     <div class="bg-base-200 rounded-box p-4">
         <h3 class="font-semibold mb-3 flex items-center gap-2">
-            📊 分數分布
+            📊 Score Distribution
         </h3>
         <div class="h-64">
             <canvas id="distributionChart"></canvas>
@@ -29,11 +29,11 @@
     <table class="table">
         <thead>
             <tr>
-                <th>排名</th>
-                <th>參賽者</th>
-                <th>分數</th>
-                <th>提交數</th>
-                <th>最後提交</th>
+                <th>Rank</th>
+                <th>Participant</th>
+                <th>Score</th>
+                <th>Submissions</th>
+                <th>Last Submission</th>
             </tr>
         </thead>
         <tbody>
@@ -53,7 +53,7 @@
                 <td>
                     {{ entry.username }}
                     {% if entry.is_current_user %}
-                    <span class="badge badge-sm badge-primary ml-1">我</span>
+                    <span class="badge badge-sm badge-primary ml-1">Me</span>
                     {% endif %}
                 </td>
                 <td>
@@ -73,7 +73,8 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
     </svg>
-    <span>目前顯示 Public Score。競賽結束後將公布 Private Score 最終排名。</span>
+    <span>Currently showing Public Score. Private Score final rankings will be revealed after the competition
+        ends.</span>
 </div>
 {% endif %}
 
@@ -114,13 +115,13 @@
                                     },
                                     title: {
                                         display: true,
-                                        text: '時間'
+                                        text: 'Time'
                                     }
                                 },
                                 y: {
                                     title: {
                                         display: true,
-                                        text: '分數'
+                                        text: 'Score'
                                     },
                                     beginAtZero: false
                                 }
@@ -133,7 +134,7 @@
                         }
                     });
                 } else if (trendCtx) {
-                    trendCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">尚無趨勢資料</div>';
+                    trendCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">No trend data available</div>';
                 }
 
                 // Score Distribution Bar Chart
@@ -144,7 +145,7 @@
                         data: {
                             labels: data.distribution.labels,
                             datasets: [{
-                                label: '參賽者數',
+                                label: 'Participants',
                                 data: data.distribution.data,
                                 backgroundColor: 'rgba(59, 130, 246, 0.7)',
                                 borderColor: 'rgb(59, 130, 246)',
@@ -162,13 +163,13 @@
                                     },
                                     title: {
                                         display: true,
-                                        text: '人數'
+                                        text: 'Count'
                                     }
                                 },
                                 x: {
                                     title: {
                                         display: true,
-                                        text: '分數區間'
+                                        text: 'Score Range'
                                     }
                                 }
                             },
@@ -180,7 +181,7 @@
                         }
                     });
                 } else if (distCtx) {
-                    distCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">尚無分布資料</div>';
+                    distCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">No distribution data available</div>';
                 }
             })
             .catch(err => {
@@ -191,6 +192,6 @@
 
 {% else %}
 <div class="text-center py-8 text-gray-500">
-    尚無排行榜資料
+    No leaderboard data available
 </div>
 {% endif %}

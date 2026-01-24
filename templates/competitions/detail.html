@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}{{ competition.name }} - CV 競賽平台{% endblock %}
+{% block title %}{{ competition.name }} - VNAP Benchmark Platform{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
     <!-- Breadcrumb -->
     <div class="text-sm breadcrumbs">
         <ul>
-            <li><a href="{% url 'competition_list' %}">我的競賽</a></li>
+            <li><a href="{% url 'competition_list' %}">My Competitions</a></li>
             <li>{{ competition.name }}</li>
         </ul>
     </div>
@@ -22,7 +22,7 @@
                 <span class="badge badge-primary">{{ competition.get_task_type_display }}</span>
                 <span class="badge badge-secondary">{{ competition.get_metric_type_display }}</span>
                 {% if competition.status == 'ACTIVE' %}
-                <span class="badge badge-success">進行中</span>
+                <span class="badge badge-success">Active</span>
                 {% else %}
                 <span class="badge badge-ghost">{{ competition.get_status_display }}</span>
                 {% endif %}
@@ -37,7 +37,7 @@
             {% if competition.dataset_url %}
             <div class="mt-4">
                 <a href="{{ competition.dataset_url }}" class="btn btn-outline btn-info" target="_blank">
-                    📥 下載資料集
+                    📥 Download Dataset
                 </a>
             </div>
             {% endif %}
@@ -47,20 +47,20 @@
         <div class="lg:w-80">
             <div class="stats stats-vertical shadow bg-base-100 w-full">
                 <div class="stat">
-                    <div class="stat-title">剩餘時間</div>
+                    <div class="stat-title">Time Remaining</div>
                     <div class="stat-value text-lg countdown" data-end="{{ participant.end_time|date:'c' }}">
-                        <span id="main-countdown">計算中...</span>
+                        <span id="main-countdown">Calculating...</span>
                     </div>
                 </div>
                 <div class="stat">
-                    <div class="stat-title">今日上傳</div>
+                    <div class="stat-title">Today's Uploads</div>
                     <div class="stat-value">
                         <span id="today-count">{{ today_count }}</span> / {{ competition.daily_upload_limit }}
                     </div>
-                    <div class="stat-desc">每日重置</div>
+                    <div class="stat-desc">Daily reset</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-title">總上傳次數</div>
+                    <div class="stat-title">Total Uploads</div>
                     <div class="stat-value">
                         <span id="total-count">{{ total_count }}</span> / {{ competition.total_upload_limit }}
                     </div>
@@ -71,16 +71,16 @@
 
     <!-- Tabs -->
     <div role="tablist" class="tabs tabs-boxed bg-base-100 p-1">
-        <a role="tab" class="tab tab-active" id="tab-upload" onclick="showTab('upload')">📤 上傳預測</a>
-        <a role="tab" class="tab" id="tab-history" onclick="showTab('history')">📋 歷史紀錄</a>
-        <a role="tab" class="tab" id="tab-leaderboard" onclick="showTab('leaderboard')">🏆 排行榜</a>
+        <a role="tab" class="tab tab-active" id="tab-upload" onclick="showTab('upload')">📤 Upload Predictions</a>
+        <a role="tab" class="tab" id="tab-history" onclick="showTab('history')">📋 Submission History</a>
+        <a role="tab" class="tab" id="tab-leaderboard" onclick="showTab('leaderboard')">🏆 Leaderboard</a>
     </div>
 
     <!-- Tab content: Upload -->
     <div id="content-upload" class="panel-content">
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
-                <h2 class="card-title">上傳預測檔案</h2>
+                <h2 class="card-title">Upload Prediction File</h2>
 
                 {% if can_upload %}
                 <form hx-post="{% url 'upload_prediction' competition.id %}" hx-target="#upload-result"
@@ -89,13 +89,13 @@
 
                     <div class="form-control">
                         <label class="label">
-                            <span class="label-text">選擇 CSV 檔案</span>
+                            <span class="label-text">Select CSV File</span>
                         </label>
                         <input type="file" name="prediction_file" accept=".csv"
                             class="file-input file-input-bordered file-input-primary w-full max-w-md" required />
                         <label class="label">
                             <span class="label-text-alt text-gray-500">
-                                格式：{{ expected_format }}
+                                Format: {{ expected_format }}
                             </span>
                         </label>
                     </div>
@@ -105,7 +105,7 @@
                             <span class="htmx-indicator" id="upload-spinner">
                                 <span class="loading loading-spinner loading-sm"></span>
                             </span>
-                            提交驗證
+                            Submit for Validation
                         </button>
                     </div>
                 </form>
@@ -129,7 +129,7 @@
     <div id="content-history" class="panel-content hidden">
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
-                <h2 class="card-title">我的提交紀錄</h2>
+                <h2 class="card-title">My Submission History</h2>
 
                 <div hx-get="{% url 'submission_history' competition.id %}" hx-trigger="load, every 30s"
                     hx-swap="innerHTML">
@@ -146,7 +146,7 @@
         <div class="card bg-base-100 shadow-xl">
             <div class="card-body">
                 <h2 class="card-title">
-                    🏆 排行榜
+                    🏆 Leaderboard
                     {% if competition.status == 'ENDED' %}
                     <span class="badge badge-accent">Private Score</span>
                     {% else %}
@@ -188,7 +188,7 @@
         const diff = endTime - now;
 
         if (diff <= 0) {
-            countdownEl.textContent = '已結束';
+            countdownEl.textContent = 'Ended';
             return;
         }
 
@@ -198,7 +198,7 @@
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
         if (days > 0) {
-            countdownEl.textContent = `${days}天 ${hours}時 ${minutes}分`;
+            countdownEl.textContent = `${days}d ${hours}h ${minutes}m`;
         } else {
             countdownEl.textContent = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }

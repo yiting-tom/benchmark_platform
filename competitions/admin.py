@@ -44,29 +44,29 @@ class CompetitionAdmin(admin.ModelAdmin):
     inlines = [CompetitionParticipantInline]
     
     fieldsets = (
-        ('基本資訊', {
+        ('General Information', {
             'fields': ('name', 'description', 'task_type', 'metric_type')
         }),
-        ('資料設定', {
+        ('Data Settings', {
             'fields': ('public_ground_truth', 'private_ground_truth', 'dataset_url')
         }),
-        ('上傳限制', {
+        ('Upload Limits', {
             'fields': ('daily_upload_limit', 'total_upload_limit')
         }),
-        ('狀態', {
+        ('Status', {
             'fields': ('status',)
         }),
-        ('時間戳記', {
+        ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
 
-    @admin.display(description='參賽人數')
+    @admin.display(description='Participants')
     def participant_count(self, obj):
         return obj.participants.count()
 
-    @admin.display(description='提交數')
+    @admin.display(description='Submissions')
     def submission_count(self, obj):
         return obj.submissions.count()
 
@@ -87,13 +87,13 @@ class CompetitionParticipantAdmin(admin.ModelAdmin):
     autocomplete_fields = ['user', 'competition']
     list_editable = ['is_active']
 
-    @admin.display(description='狀態')
+    @admin.display(description='Status')
     def participation_status(self, obj):
         if not obj.is_active:
-            return format_html('<span style="color: {};">{}</span>', 'gray', '⏸️ 已停權')
+            return format_html('<span style="color: {};">{}</span>', 'gray', '⏸️ Suspended')
         if obj.can_participate():
-            return format_html('<span style="color: {};">{}</span>', 'green', '✅ 可參賽')
-        return format_html('<span style="color: {};">{}</span>', 'orange', '⏰ 非活動時間')
+            return format_html('<span style="color: {};">{}</span>', 'green', '✅ Active')
+        return format_html('<span style="color: {};">{}</span>', 'orange', '⏰ Out of Window')
 
 
 class SubmissionLogInline(admin.TabularInline):
@@ -142,22 +142,22 @@ class SubmissionAdmin(admin.ModelAdmin):
     inlines = [SubmissionLogInline]
     
     fieldsets = (
-        ('提交資訊', {
+        ('Submission Info', {
             'fields': ('competition', 'user', 'prediction_file', 'submitted_at')
         }),
-        ('評分結果', {
+        ('Scoring Results', {
             'fields': ('status', 'public_score', 'private_score', 'scored_at')
         }),
-        ('最終選擇', {
+        ('Final Selection', {
             'fields': ('is_final_selection',)
         }),
-        ('錯誤訊息', {
+        ('Error Message', {
             'fields': ('error_message',),
             'classes': ('collapse',)
         }),
     )
 
-    @admin.display(description='狀態')
+    @admin.display(description='Status')
     def status_badge(self, obj):
         colors = {
             'PENDING': 'gray',
@@ -181,7 +181,7 @@ class SubmissionLogAdmin(admin.ModelAdmin):
     search_fields = ['message', 'submission__user__username']
     readonly_fields = ['submission', 'level', 'message', 'created_at']
 
-    @admin.display(description='訊息')
+    @admin.display(description='Message')
     def short_message(self, obj):
         return obj.message[:80] + '...' if len(obj.message) > 80 else obj.message
 

@@ -81,15 +81,15 @@ class CompetitionDetailView(LoginRequiredMixin, View):
         # Check time window
         if now < participant.start_time:
             can_upload = False
-            upload_error = f"競賽尚未開始（開始時間：{participant.start_time.strftime('%Y-%m-%d %H:%M')}）"
+            upload_error = f"Competition has not started yet (Start Time: {participant.start_time.strftime('%Y-%m-%d %H:%M')})"
         elif now > participant.end_time:
             can_upload = False
-            upload_error = "您的參賽時間已結束"
+            upload_error = "Your participation time has ended"
         
         # Check competition status
         if competition.status != CompetitionStatus.ACTIVE:
             can_upload = False
-            upload_error = "競賽已結束"
+            upload_error = "Competition has ended"
         
         # Check upload limits
         today_count = Submission.get_today_count(competition, request.user)
@@ -97,11 +97,11 @@ class CompetitionDetailView(LoginRequiredMixin, View):
         
         if today_count >= competition.daily_upload_limit:
             can_upload = False
-            upload_error = "已達今日上傳上限"
+            upload_error = "Daily upload limit reached"
         
         if total_count >= competition.total_upload_limit:
             can_upload = False
-            upload_error = "已達總上傳上限"
+            upload_error = "Total upload limit reached"
         
         # Detect expected columns from ground truth file
         expected_format = self._get_expected_format(competition)
@@ -167,13 +167,13 @@ def upload_prediction(request, competition_id):
     if today_count >= competition.daily_upload_limit:
         return render(request, 'competitions/partials/upload_result.html', {
             'success': False,
-            'error': '已達今日上傳上限'
+            'error': 'Daily upload limit reached'
         })
     
     if total_count >= competition.total_upload_limit:
         return render(request, 'competitions/partials/upload_result.html', {
             'success': False,
-            'error': '已達總上傳上限'
+            'error': 'Total upload limit reached'
         })
     
     # Check time window
@@ -181,7 +181,7 @@ def upload_prediction(request, competition_id):
     if not (participant.start_time <= now <= participant.end_time):
         return render(request, 'competitions/partials/upload_result.html', {
             'success': False,
-            'error': '不在參賽時間內'
+            'error': 'Not within participation time window'
         })
     
     # Get uploaded file
@@ -189,13 +189,13 @@ def upload_prediction(request, competition_id):
     if not prediction_file:
         return render(request, 'competitions/partials/upload_result.html', {
             'success': False,
-            'error': '請選擇檔案'
+            'error': 'Please select a file'
         })
     
     if not prediction_file.name.endswith('.csv'):
         return render(request, 'competitions/partials/upload_result.html', {
             'success': False,
-            'error': '請上傳 CSV 格式檔案'
+            'error': 'Please upload a CSV file'
         })
     
     # Create submission

@@ -15,9 +15,9 @@ from django.utils import timezone
 
 class TaskType(models.TextChoices):
     """Supported CV task types."""
-    CLASSIFICATION = 'CLASSIFICATION', '圖像分類'
-    DETECTION = 'DETECTION', '物件偵測'
-    SEGMENTATION = 'SEGMENTATION', '影像分割'
+    CLASSIFICATION = 'CLASSIFICATION', 'Image Classification'
+    DETECTION = 'DETECTION', 'Object Detection'
+    SEGMENTATION = 'SEGMENTATION', 'Image Segmentation'
 
 
 class MetricType(models.TextChoices):
@@ -31,17 +31,17 @@ class MetricType(models.TextChoices):
 
 class CompetitionStatus(models.TextChoices):
     """Competition lifecycle status."""
-    DRAFT = 'DRAFT', '草稿'
-    ACTIVE = 'ACTIVE', '進行中'
-    ENDED = 'ENDED', '已結束'
+    DRAFT = 'DRAFT', 'Draft'
+    ACTIVE = 'ACTIVE', 'Active'
+    ENDED = 'ENDED', 'Ended'
 
 
 class SubmissionStatus(models.TextChoices):
     """Submission processing status."""
-    PENDING = 'PENDING', '等待中'
-    PROCESSING = 'PROCESSING', '處理中'
-    SUCCESS = 'SUCCESS', '成功'
-    FAILED = 'FAILED', '失敗'
+    PENDING = 'PENDING', 'Pending'
+    PROCESSING = 'PROCESSING', 'Processing'
+    SUCCESS = 'SUCCESS', 'Success'
+    FAILED = 'FAILED', 'Failed'
 
 
 class LogLevel(models.TextChoices):
@@ -69,53 +69,53 @@ class Competition(models.Model):
     """
     name = models.CharField(
         max_length=100,
-        verbose_name='競賽名稱',
-        help_text='例如：瑕疵偵測挑戰賽'
+        verbose_name='Competition Name',
+        help_text='e.g., Defect Detection Challenge'
     )
     description = models.TextField(
-        verbose_name='競賽說明',
-        help_text='支援 Markdown 格式',
+        verbose_name='Description',
+        help_text='Markdown supported',
         blank=True
     )
     task_type = models.CharField(
         max_length=20,
         choices=TaskType.choices,
-        verbose_name='任務類型'
+        verbose_name='Task Type'
     )
     metric_type = models.CharField(
         max_length=20,
         choices=MetricType.choices,
-        verbose_name='評分指標'
+        verbose_name='Metric'
     )
     
     # Ground truth files
     public_ground_truth = models.FileField(
         upload_to=competition_ground_truth_path,
-        verbose_name='Public Set 標準答案',
-        help_text='CSV 格式'
+        verbose_name='Public Ground Truth',
+        help_text='CSV format'
     )
     private_ground_truth = models.FileField(
         upload_to=competition_ground_truth_path,
-        verbose_name='Private Set 標準答案',
-        help_text='CSV 格式，僅 Validator 可見',
+        verbose_name='Private Ground Truth',
+        help_text='CSV format, only visible to Validators',
         blank=True,
         null=True
     )
     
     # Dataset access
     dataset_url = models.URLField(
-        verbose_name='資料集下載連結',
+        verbose_name='Dataset Download URL',
         blank=True
     )
     
     # Upload limits
     daily_upload_limit = models.PositiveIntegerField(
         default=5,
-        verbose_name='每日上傳上限'
+        verbose_name='Daily Upload Limit'
     )
     total_upload_limit = models.PositiveIntegerField(
         default=100,
-        verbose_name='總上傳上限'
+        verbose_name='Total Upload Limit'
     )
     
     # Status
@@ -123,16 +123,16 @@ class Competition(models.Model):
         max_length=20,
         choices=CompetitionStatus.choices,
         default=CompetitionStatus.DRAFT,
-        verbose_name='狀態'
+        verbose_name='Status'
     )
     
     # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='建立時間')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新時間')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated At')
 
     class Meta:
-        verbose_name = '競賽'
-        verbose_name_plural = '競賽'
+        verbose_name = 'Competition'
+        verbose_name_plural = 'Competitions'
         ordering = ['-created_at']
 
     def __str__(self):
@@ -150,31 +150,31 @@ class CompetitionParticipant(models.Model):
         Competition,
         on_delete=models.CASCADE,
         related_name='participants',
-        verbose_name='競賽'
+        verbose_name='Competition'
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='competition_participations',
-        verbose_name='參賽者'
+        verbose_name='Participant'
     )
     
     # Per-user time window
-    start_time = models.DateTimeField(verbose_name='開始時間')
-    end_time = models.DateTimeField(verbose_name='結束時間')
+    start_time = models.DateTimeField(verbose_name='Start Time')
+    end_time = models.DateTimeField(verbose_name='End Time')
     
     # Manual control
     is_active = models.BooleanField(
         default=True,
-        verbose_name='啟用',
-        help_text='取消勾選可暫停該使用者的參賽權限'
+        verbose_name='Active',
+        help_text='Uncheck to suspend participation'
     )
     
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='建立時間')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
 
     class Meta:
-        verbose_name = '參賽白名單'
-        verbose_name_plural = '參賽白名單'
+        verbose_name = 'Competition Participant'
+        verbose_name_plural = 'Competition Participants'
         unique_together = ['competition', 'user']
         indexes = [
             models.Index(fields=['competition', 'user']),
@@ -204,19 +204,19 @@ class Submission(models.Model):
         Competition,
         on_delete=models.CASCADE,
         related_name='submissions',
-        verbose_name='競賽'
+        verbose_name='Competition'
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='submissions',
-        verbose_name='提交者'
+        verbose_name='Submitter'
     )
     
     # Uploaded file
     prediction_file = models.FileField(
         upload_to=submission_prediction_path,
-        verbose_name='預測檔案'
+        verbose_name='Prediction File'
     )
     
     # Processing status
@@ -224,7 +224,7 @@ class Submission(models.Model):
         max_length=20,
         choices=SubmissionStatus.choices,
         default=SubmissionStatus.PENDING,
-        verbose_name='狀態'
+        verbose_name='Status'
     )
     
     # Scores
@@ -237,33 +237,33 @@ class Submission(models.Model):
         null=True,
         blank=True,
         verbose_name='Private Score',
-        help_text='由 Validator 填入'
+        help_text='Filled by Validator'
     )
     
     # Final selection flag
     is_final_selection = models.BooleanField(
         default=False,
-        verbose_name='最終決定版',
-        help_text='勾選此項作為最終評分版本'
+        verbose_name='Final Selection',
+        help_text='Mark this as the final version for scoring'
     )
     
     # Error handling
     error_message = models.TextField(
         blank=True,
-        verbose_name='錯誤訊息'
+        verbose_name='Error Message'
     )
     
     # Timestamps
-    submitted_at = models.DateTimeField(auto_now_add=True, verbose_name='提交時間')
+    submitted_at = models.DateTimeField(auto_now_add=True, verbose_name='Submitted At')
     scored_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='算分完成時間'
+        verbose_name='Scored At'
     )
 
     class Meta:
-        verbose_name = '提交紀錄'
-        verbose_name_plural = '提交紀錄'
+        verbose_name = 'Submission'
+        verbose_name_plural = 'Submissions'
         ordering = ['-submitted_at']
         indexes = [
             models.Index(fields=['competition', 'user', '-submitted_at']),
@@ -313,20 +313,20 @@ class SubmissionLog(models.Model):
         Submission,
         on_delete=models.CASCADE,
         related_name='logs',
-        verbose_name='提交紀錄'
+        verbose_name='Submission'
     )
     level = models.CharField(
         max_length=10,
         choices=LogLevel.choices,
         default=LogLevel.INFO,
-        verbose_name='等級'
+        verbose_name='Level'
     )
-    message = models.TextField(verbose_name='訊息')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='時間')
+    message = models.TextField(verbose_name='Message')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
 
     class Meta:
-        verbose_name = '算分日誌'
-        verbose_name_plural = '算分日誌'
+        verbose_name = 'Scoring Log'
+        verbose_name_plural = 'Scoring Logs'
         ordering = ['created_at']
 
     def __str__(self):
