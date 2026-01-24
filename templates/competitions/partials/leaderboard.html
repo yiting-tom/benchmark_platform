@@ -1,5 +1,30 @@
-<!-- HTMX partial: Leaderboard table -->
+<!-- HTMX partial: Leaderboard with charts -->
 {% if leaderboard %}
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Score Trend Chart -->
+    <div class="bg-base-200 rounded-box p-4">
+        <h3 class="font-semibold mb-3 flex items-center gap-2">
+            📈 分數趨勢
+        </h3>
+        <div class="h-64">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Score Distribution Chart -->
+    <div class="bg-base-200 rounded-box p-4">
+        <h3 class="font-semibold mb-3 flex items-center gap-2">
+            📊 分數分布
+        </h3>
+        <div class="h-64">
+            <canvas id="distributionChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Leaderboard Table -->
 <div class="overflow-x-auto">
     <table class="table">
         <thead>
@@ -51,6 +76,118 @@
     <span>目前顯示 Public Score。競賽結束後將公布 Private Score 最終排名。</span>
 </div>
 {% endif %}
+
+<!-- Chart.js initialization -->
+<script>
+    (function () {
+        // Destroy existing charts if they exist (for HTMX re-renders)
+        if (window.trendChartInstance) {
+            window.trendChartInstance.destroy();
+        }
+        if (window.distributionChartInstance) {
+            window.distributionChartInstance.destroy();
+        }
+
+        // Fetch chart data
+        fetch('{{ request.path }}chart-data/')
+            .then(response => response.json())
+            .then(data => {
+                // Score Trend Line Chart
+                const trendCtx = document.getElementById('trendChart');
+                if (trendCtx && data.trend.datasets.length > 0) {
+                    window.trendChartInstance = new Chart(trendCtx, {
+                        type: 'line',
+                        data: {
+                            datasets: data.trend.datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: {
+                                        displayFormats: {
+                                            hour: 'MM/dd HH:mm',
+                                            day: 'MM/dd'
+                                        }
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: '時間'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: '分數'
+                                    },
+                                    beginAtZero: false
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                } else if (trendCtx) {
+                    trendCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">尚無趨勢資料</div>';
+                }
+
+                // Score Distribution Bar Chart
+                const distCtx = document.getElementById('distributionChart');
+                if (distCtx && data.distribution.labels.length > 0) {
+                    window.distributionChartInstance = new Chart(distCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.distribution.labels,
+                            datasets: [{
+                                label: '參賽者數',
+                                data: data.distribution.data,
+                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                                borderColor: 'rgb(59, 130, 246)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: '人數'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: '分數區間'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                } else if (distCtx) {
+                    distCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">尚無分布資料</div>';
+                }
+            })
+            .catch(err => {
+                console.error('Failed to load chart data:', err);
+            });
+    })();
+</script>
 
 {% else %}
 <div class="text-center py-8 text-gray-500">

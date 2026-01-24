@@ -90,10 +90,10 @@ class CompetitionParticipantAdmin(admin.ModelAdmin):
     @admin.display(description='狀態')
     def participation_status(self, obj):
         if not obj.is_active:
-            return format_html('<span style="color: gray;">⏸️ 已停權</span>')
+            return format_html('<span style="color: {};">{}</span>', 'gray', '⏸️ 已停權')
         if obj.can_participate():
-            return format_html('<span style="color: green;">✅ 可參賽</span>')
-        return format_html('<span style="color: orange;">⏰ 非活動時間</span>')
+            return format_html('<span style="color: {};">{}</span>', 'green', '✅ 可參賽')
+        return format_html('<span style="color: {};">{}</span>', 'orange', '⏰ 非活動時間')
 
 
 class SubmissionLogInline(admin.TabularInline):

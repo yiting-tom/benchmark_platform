@@ -10,7 +10,7 @@ Handles participant-facing pages:
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Max
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views import View
@@ -327,3 +327,93 @@ def leaderboard(request, competition_id):
         'leaderboard': leaderboard_data,
         'show_private': show_private,
     })
+
+
+@login_required
+def leaderboard_chart_data(request, competition_id):
+    """Return JSON data for leaderboard charts."""
+    from collections import defaultdict
+    
+    competition = get_object_or_404(Competition, id=competition_id)
+    show_private = competition.status == CompetitionStatus.ENDED
+    score_field = 'private_score' if show_private else 'public_score'
+    
+    # Get all successful submissions with scores
+    submissions = Submission.objects.filter(
+        competition=competition,
+        status=SubmissionStatus.SUCCESS,
+        **{f'{score_field}__isnull': False}
+    ).select_related('user').order_by('submitted_at')
+    
+    # --- Score Trend Data ---
+    # Track best score per user over time
+    user_best_scores = defaultdict(lambda: {'scores': [], 'timestamps': []})
+    user_running_best = {}
+    
+    for s in submissions:
+        username = s.user.username
+        score = getattr(s, score_field)
+        timestamp = s.submitted_at.isoformat()
+        
+        # Update running best
+        if username not in user_running_best or score > user_running_best[username]:
+            user_running_best[username] = score
+            user_best_scores[username]['scores'].append(score)
+            user_best_scores[username]['timestamps'].append(timestamp)
+    
+    # Build datasets for Chart.js
+    colors = [
+        'rgb(59, 130, 246)',   # blue
+        'rgb(239, 68, 68)',    # red
+        'rgb(34, 197, 94)',    # green
+        'rgb(168, 85, 247)',   # purple
+        'rgb(249, 115, 22)',   # orange
+        'rgb(236, 72, 153)',   # pink
+        'rgb(20, 184, 166)',   # teal
+        'rgb(245, 158, 11)',   # amber
+    ]
+    
+    trend_datasets = []
+    for i, (username, data) in enumerate(user_best_scores.items()):
+        color = colors[i % len(colors)]
+        trend_datasets.append({
+            'label': username,
+            'data': [{'x': t, 'y': s} for t, s in zip(data['timestamps'], data['scores'])],
+            'borderColor': color,
+            'backgroundColor': color,
+            'tension': 0.3,
+            'fill': False,
+        })
+    
+    # --- Score Distribution Data ---
+    # Get final best scores per user
+    final_scores = list(user_running_best.values())
+    
+    if final_scores:
+        min_score = min(final_scores)
+        max_score = max(final_scores)
+        range_size = (max_score - min_score) / 5 if max_score > min_score else 0.2
+        
+        # Create 5 bins
+        bins = []
+        counts = []
+        for i in range(5):
+            bin_start = min_score + i * range_size
+            bin_end = min_score + (i + 1) * range_size
+            bins.append(f"{bin_start:.2f}-{bin_end:.2f}")
+            count = sum(1 for s in final_scores if bin_start <= s < bin_end or (i == 4 and s == bin_end))
+            counts.append(count)
+    else:
+        bins = []
+        counts = []
+    
+    return JsonResponse({
+        'trend': {
+            'datasets': trend_datasets,
+        },
+        'distribution': {
+            'labels': bins,
+            'data': counts,
+        }
+    })
+
