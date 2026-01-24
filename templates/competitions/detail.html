@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}{{ competition.name }} - CV 競賽平台{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Breadcrumb -->
+    <div class="text-sm breadcrumbs">
+        <ul>
+            <li><a href="{% url 'competition_list' %}">我的競賽</a></li>
+            <li>{{ competition.name }}</li>
+        </ul>
+    </div>
+
+    <!-- Competition header -->
+    <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Left: Info -->
+        <div class="flex-1">
+            <h1 class="text-3xl font-bold mb-4">{{ competition.name }}</h1>
+
+            <div class="flex gap-2 mb-4">
+                <span class="badge badge-primary">{{ competition.get_task_type_display }}</span>
+                <span class="badge badge-secondary">{{ competition.get_metric_type_display }}</span>
+                {% if competition.status == 'ACTIVE' %}
+                <span class="badge badge-success">進行中</span>
+                {% else %}
+                <span class="badge badge-ghost">{{ competition.get_status_display }}</span>
+                {% endif %}
+            </div>
+
+            {% if competition.description %}
+            <div class="prose max-w-none bg-base-100 p-6 rounded-box shadow">
+                {{ competition.description|linebreaks }}
+            </div>
+            {% endif %}
+
+            {% if competition.dataset_url %}
+            <div class="mt-4">
+                <a href="{{ competition.dataset_url }}" class="btn btn-outline btn-info" target="_blank">
+                    📥 下載資料集
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right: Stats -->
+        <div class="lg:w-80">
+            <div class="stats stats-vertical shadow bg-base-100 w-full">
+                <div class="stat">
+                    <div class="stat-title">剩餘時間</div>
+                    <div class="stat-value text-lg countdown" data-end="{{ participant.end_time|date:'c' }}">
+                        <span id="main-countdown">計算中...</span>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">今日上傳</div>
+                    <div class="stat-value">
+                        <span id="today-count">{{ today_count }}</span> / {{ competition.daily_upload_limit }}
+                    </div>
+                    <div class="stat-desc">每日重置</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">總上傳次數</div>
+                    <div class="stat-value">
+                        <span id="total-count">{{ total_count }}</span> / {{ competition.total_upload_limit }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div role="tablist" class="tabs tabs-boxed bg-base-100 p-1">
+        <a role="tab" class="tab tab-active" id="tab-upload" onclick="showTab('upload')">📤 上傳預測</a>
+        <a role="tab" class="tab" id="tab-history" onclick="showTab('history')">📋 歷史紀錄</a>
+        <a role="tab" class="tab" id="tab-leaderboard" onclick="showTab('leaderboard')">🏆 排行榜</a>
+    </div>
+
+    <!-- Tab content: Upload -->
+    <div id="content-upload" class="panel-content">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">上傳預測檔案</h2>
+
+                {% if can_upload %}
+                <form hx-post="{% url 'upload_prediction' competition.id %}" hx-target="#upload-result"
+                    hx-swap="innerHTML" hx-indicator="#upload-spinner" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">選擇 CSV 檔案</span>
+                        </label>
+                        <input type="file" name="prediction_file" accept=".csv"
+                            class="file-input file-input-bordered file-input-primary w-full max-w-md" required />
+                        <label class="label">
+                            <span class="label-text-alt text-gray-500">
+                                格式：{{ expected_format }}
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="flex gap-4 items-center">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="htmx-indicator" id="upload-spinner">
+                                <span class="loading loading-spinner loading-sm"></span>
+                            </span>
+                            提交驗證
+                        </button>
+                    </div>
+                </form>
+
+                <div id="upload-result" class="mt-4"></div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>{{ upload_error }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab content: History -->
+    <div id="content-history" class="panel-content hidden">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">我的提交紀錄</h2>
+
+                <div hx-get="{% url 'submission_history' competition.id %}" hx-trigger="load, every 30s"
+                    hx-swap="innerHTML">
+                    <div class="flex justify-center py-8">
+                        <span class="loading loading-spinner loading-lg"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab content: Leaderboard -->
+    <div id="content-leaderboard" class="panel-content hidden">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title">
+                    🏆 排行榜
+                    {% if competition.status == 'ENDED' %}
+                    <span class="badge badge-accent">Private Score</span>
+                    {% else %}
+                    <span class="badge">Public Score</span>
+                    {% endif %}
+                </h2>
+
+                <div hx-get="{% url 'leaderboard' competition.id %}" hx-trigger="load, every 60s" hx-swap="innerHTML">
+                    <div class="flex justify-center py-8">
+                        <span class="loading loading-spinner loading-lg"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab switching
+    function showTab(tabName) {
+        // Hide all content
+        document.querySelectorAll('.panel-content').forEach(el => el.classList.add('hidden'));
+        // Remove active from all tabs
+        document.querySelectorAll('[role="tab"]').forEach(el => el.classList.remove('tab-active'));
+
+        // Show selected content
+        document.getElementById('content-' + tabName).classList.remove('hidden');
+        document.getElementById('tab-' + tabName).classList.add('tab-active');
+    }
+
+    // Countdown timer
+    const endTime = new Date("{{ participant.end_time|date:'c' }}");
+    const countdownEl = document.getElementById('main-countdown');
+
+    function updateCountdown() {
+        const now = new Date();
+        const diff = endTime - now;
+
+        if (diff <= 0) {
+            countdownEl.textContent = '已結束';
+            return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        if (days > 0) {
+            countdownEl.textContent = `${days}天 ${hours}時 ${minutes}分`;
+        } else {
+            countdownEl.textContent = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+</script>
+{% endblock %}

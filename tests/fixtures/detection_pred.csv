@@ -1,0 +1,6 @@
+image_id,class_label,confidence,xmin,ymin,xmax,ymax
+img_001,car,0.95,12,22,98,118
+img_001,person,0.88,148,48,198,178
+img_002,car,0.75,35,45,125,155
+img_003,person,0.60,22,32,78,148
+img_003,car,0.40,100,100,150,150

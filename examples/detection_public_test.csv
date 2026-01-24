@@ -1,0 +1,6 @@
+filename,class_label,xmin,ymin,xmax,ymax
+0000001.png,car,10,20,100,120
+0000001.png,person,150,50,200,180
+0000002.png,car,30,40,130,160
+0000003.png,person,20,30,80,150
+0000003.png,dog,200,100,280,200

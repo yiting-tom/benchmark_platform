@@ -1,0 +1,4 @@
+image_id,class_label,rle_mask,height,width
+img_001,cat,1 10 15 5,10,10
+img_001,dog,50 20,10,10
+img_002,cat,1 25,10,10

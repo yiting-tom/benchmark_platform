@@ -1,0 +1,18 @@
+[project]
+name = "benchmark-platform"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.0.1",
+    "django-htmx>=1.27.0",
+    "django-q2>=1.9.0",
+    "django-tailwind>=4.4.2",
+    "gunicorn>=24.0.0",
+    "numpy>=2.4.1",
+    "opencv-python-headless>=4.13.0.90",
+    "pandas>=3.0.0",
+    "psycopg>=3.3.2",
+    "pycocotools>=2.0.11",
+    "scikit-learn>=1.8.0",
+]

@@ -1,0 +1,59 @@
+<!-- HTMX partial: Leaderboard table -->
+{% if leaderboard %}
+<div class="overflow-x-auto">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>排名</th>
+                <th>參賽者</th>
+                <th>分數</th>
+                <th>提交數</th>
+                <th>最後提交</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in leaderboard %}
+            <tr class="{% if entry.is_current_user %}bg-primary/10 font-bold{% endif %}">
+                <td>
+                    {% if entry.rank == 1 %}
+                    🥇
+                    {% elif entry.rank == 2 %}
+                    🥈
+                    {% elif entry.rank == 3 %}
+                    🥉
+                    {% else %}
+                    {{ entry.rank }}
+                    {% endif %}
+                </td>
+                <td>
+                    {{ entry.username }}
+                    {% if entry.is_current_user %}
+                    <span class="badge badge-sm badge-primary ml-1">我</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="font-mono text-lg">{{ entry.score|floatformat:4 }}</span>
+                </td>
+                <td>{{ entry.submission_count }}</td>
+                <td>{{ entry.last_submission|date:"m/d H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if not show_private %}
+<div class="alert alert-info mt-4">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <span>目前顯示 Public Score。競賽結束後將公布 Private Score 最終排名。</span>
+</div>
+{% endif %}
+
+{% else %}
+<div class="text-center py-8 text-gray-500">
+    尚無排行榜資料
+</div>
+{% endif %}

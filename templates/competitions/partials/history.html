@@ -1,0 +1,69 @@
+<!-- HTMX partial: Submission history table -->
+{% if submissions %}
+<div class="overflow-x-auto">
+    <table class="table table-zebra">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>提交時間</th>
+                <th>狀態</th>
+                <th>Public Score</th>
+                <th>最終版</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for submission in submissions %}
+            <tr class="{% if submission.is_final_selection %}bg-primary/10{% endif %}">
+                <td>{{ submission.id }}</td>
+                <td>{{ submission.submitted_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if submission.status == 'PENDING' %}
+                    <span class="badge badge-ghost">等待中</span>
+                    {% elif submission.status == 'PROCESSING' %}
+                    <span class="badge badge-info">
+                        <span class="loading loading-spinner loading-xs mr-1"></span>
+                        處理中
+                    </span>
+                    {% elif submission.status == 'SUCCESS' %}
+                    <span class="badge badge-success">成功</span>
+                    {% else %}
+                    <span class="badge badge-error tooltip" data-tip="{{ submission.error_message }}">
+                        失敗
+                    </span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if submission.public_score is not None %}
+                    <span class="font-mono font-bold">{{ submission.public_score|floatformat:4 }}</span>
+                    {% else %}
+                    <span class="text-gray-400">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if submission.is_final_selection %}
+                    <span class="badge badge-accent">✓ 最終版</span>
+                    {% else %}
+                    {% if submission.status == 'SUCCESS' %}
+                    <button class="btn btn-xs btn-outline" hx-post="{% url 'set_final_selection' submission.id %}"
+                        hx-target="closest tr" hx-swap="outerHTML" hx-confirm="確定要將此提交設為最終版嗎？">
+                        設為最終版
+                    </button>
+                    {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ submission.prediction_file.url }}" class="btn btn-xs btn-ghost" download>
+                        📥
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-8 text-gray-500">
+    尚無提交紀錄
+</div>
+{% endif %}

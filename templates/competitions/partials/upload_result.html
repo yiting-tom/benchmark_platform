@@ -1,0 +1,34 @@
+<!-- HTMX partial: Upload result message -->
+{% if success %}
+<div class="alert alert-success animate-slide-in">
+    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <div>
+        <h3 class="font-bold">上傳成功！</h3>
+        <div class="text-sm">提交 #{{ submission_id }} 已加入評分隊列。</div>
+    </div>
+</div>
+
+<!-- Auto-refresh history after successful upload -->
+<script>
+    // Trigger history refresh
+    htmx.trigger(document.querySelector('[hx-get*="submission_history"]'), 'refresh');
+
+    // Update counts
+    document.getElementById('today-count').textContent = '{{ today_count }}';
+    document.getElementById('total-count').textContent = '{{ total_count }}';
+</script>
+{% else %}
+<div class="alert alert-error animate-slide-in">
+    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <div>
+        <h3 class="font-bold">上傳失敗</h3>
+        <div class="text-sm">{{ error }}</div>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,5 @@
+filename,class_label,rle_mask,height,width
+0000001.png,cat,1 50 100 30 200 20,256,256
+0000001.png,dog,500 40 600 25,256,256
+0000002.png,cat,1 100 150 50,256,256
+0000003.png,person,1 200 300 100 500 50,512,512

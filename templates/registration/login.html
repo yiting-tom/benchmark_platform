@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}登入 - CV 競賽平台{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center">
+    <div class="card w-96 bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl justify-center mb-4">🔐 登入</h2>
+
+            {% if form.errors %}
+            <div class="alert alert-error mb-4">
+                <span>帳號或密碼錯誤，請重試。</span>
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">使用者名稱</span>
+                    </label>
+                    <input type="text" name="username" class="input input-bordered" placeholder="username" required
+                        autofocus />
+                </div>
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">密碼</span>
+                    </label>
+                    <input type="password" name="password" class="input input-bordered" placeholder="••••••••"
+                        required />
+                </div>
+
+                <input type="hidden" name="next" value="{{ next }}" />
+
+                <button type="submit" class="btn btn-primary w-full">
+                    登入
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

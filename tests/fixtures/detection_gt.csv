@@ -1,0 +1,5 @@
+image_id,class_label,xmin,ymin,xmax,ymax
+img_001,car,10,20,100,120
+img_001,person,150,50,200,180
+img_002,car,30,40,130,160
+img_003,person,20,30,80,150

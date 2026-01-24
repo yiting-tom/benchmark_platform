@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}我的競賽 - CV 競賽平台{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Page header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold">🏆 我的競賽</h1>
+    </div>
+
+    {% if competitions %}
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {% for item in competitions %}
+        <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div class="card-body">
+                <!-- Status badge -->
+                <div class="flex justify-between items-start">
+                    <h2 class="card-title text-lg">{{ item.competition.name }}</h2>
+                    {% if item.is_active %}
+                    <span class="badge badge-success">進行中</span>
+                    {% else %}
+                    <span class="badge badge-ghost">已結束</span>
+                    {% endif %}
+                </div>
+
+                <!-- Task type & metric -->
+                <div class="flex gap-2 mt-2">
+                    <span class="badge badge-outline">{{ item.competition.get_task_type_display }}</span>
+                    <span class="badge badge-outline">{{ item.competition.get_metric_type_display }}</span>
+                </div>
+
+                <!-- Time remaining -->
+                {% if item.is_active %}
+                <div class="mt-4">
+                    <div class="text-sm text-gray-500">剩餘時間</div>
+                    <div class="countdown font-mono text-xl" data-end="{{ item.participant.end_time|date:'c' }}">
+                        <span id="countdown-{{ item.competition.id }}">計算中...</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Upload stats -->
+                <div class="stats stats-vertical shadow mt-4">
+                    <div class="stat py-2">
+                        <div class="stat-title text-xs">今日上傳</div>
+                        <div class="stat-value text-lg">{{ item.today_count }}/{{ item.competition.daily_upload_limit }}
+                        </div>
+                    </div>
+                    <div class="stat py-2">
+                        <div class="stat-title text-xs">總上傳次數</div>
+                        <div class="stat-value text-lg">{{ item.total_count }}/{{ item.competition.total_upload_limit }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card-actions justify-end mt-4">
+                    <a href="{% url 'competition_detail' item.competition.id %}" class="btn btn-primary btn-sm">
+                        進入競賽
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="hero min-h-[400px] bg-base-100 rounded-box">
+        <div class="hero-content text-center">
+            <div class="max-w-md">
+                <h2 class="text-2xl font-bold">目前沒有可參加的競賽</h2>
+                <p class="py-6 text-gray-500">
+                    請等待管理員將您加入競賽白名單。
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Countdown timer for active competitions
+    document.querySelectorAll('[data-end]').forEach(el => {
+        const endTime = new Date(el.dataset.end);
+        const countdownEl = el.querySelector('span');
+
+        function updateCountdown() {
+            const now = new Date();
+            const diff = endTime - now;
+
+            if (diff <= 0) {
+                countdownEl.textContent = '已結束';
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            if (days > 0) {
+                countdownEl.textContent = `${days}天 ${hours}時 ${minutes}分`;
+            } else {
+                countdownEl.textContent = `${hours}時 ${minutes}分 ${seconds}秒`;
+            }
+        }
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    });
+</script>
+{% endblock %}
