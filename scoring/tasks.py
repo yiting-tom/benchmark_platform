@@ -20,7 +20,9 @@ from .engines.custom import CustomScoringEngine
 
 
 def get_scoring_engine(
-    competition: Competition, ground_truth_path: Optional[str] = None
+    competition: Competition,
+    ground_truth_path: Optional[str] = None,
+    metric_type: Optional[str] = None,
 ) -> BaseScoringEngine:
     """
     Factory function to get the appropriate scoring engine for a competition.
@@ -28,6 +30,7 @@ def get_scoring_engine(
     Args:
         competition: The Competition instance.
         ground_truth_path: Optional override for ground truth file path.
+        metric_type: Optional override for metric type.
 
     Returns:
         An initialized scoring engine.
@@ -38,7 +41,8 @@ def get_scoring_engine(
     if not ground_truth_path:
         ground_truth_path = competition.public_ground_truth.path
 
-    metric_type = competition.metric_type
+    if not metric_type:
+        metric_type = competition.metric_type
 
     if competition.metric_type == MetricType.CUSTOM:
         if not competition.scoring_script:
@@ -110,10 +114,31 @@ def score_submission(submission_id: int) -> dict[str, Any]:
             submission.status = SubmissionStatus.SUCCESS
             submission.public_score = result.score
             submission.scored_at = timezone.now()
-            submission.save(update_fields=["status", "public_score", "scored_at"])
+
+            # Additional metrics
+            all_scores = {competition.metric_type: result.score}
+            for metric in competition.additional_metrics.all():
+                if metric.name == competition.metric_type:
+                    continue
+                try:
+                    engine_add = get_scoring_engine(competition, None, metric.name)
+                    res_add = engine_add.score(prediction_path)
+                    if res_add.success:
+                        all_scores[metric.name] = res_add.score
+                except Exception as e:
+                    add_submission_log(
+                        submission,
+                        f"Failed to calculate additional metric {metric.name}: {e}",
+                        LogLevel.WARNING,
+                    )
+
+            submission.scores = all_scores
+            submission.save(update_fields=["status", "public_score", "scored_at", "scores"])
 
             add_submission_log(
-                submission, f"Scoring completed. Score: {result.score}", LogLevel.INFO
+                submission,
+                f"Scoring completed. Primary Score: {result.score}",
+                LogLevel.INFO,
             )
 
             return {
@@ -191,11 +216,32 @@ def score_private_submissions(competition_id: int) -> dict[str, Any]:
 
             if result.success:
                 submission.private_score = result.score
-                submission.save(update_fields=["private_score"])
+
+                # Additional private metrics
+                all_private_scores = {competition.metric_type: result.score}
+                for metric in competition.additional_metrics.all():
+                    if metric.name == competition.metric_type:
+                        continue
+                    try:
+                        engine_add = get_scoring_engine(
+                            competition, competition.private_ground_truth.path, metric.name
+                        )
+                        res_add = engine_add.score(prediction_path)
+                        if res_add.success:
+                            all_private_scores[metric.name] = res_add.score
+                    except Exception as e:
+                        add_submission_log(
+                            submission,
+                            f"Failed to calculate additional private metric {metric.name}: {e}",
+                            LogLevel.WARNING,
+                        )
+
+                submission.private_scores = all_private_scores
+                submission.save(update_fields=["private_score", "private_scores"])
                 count += 1
                 add_submission_log(
                     submission,
-                    f"Private scoring completed. Score: {result.score}",
+                    f"Private scoring completed. Primary Score: {result.score}",
                     LogLevel.INFO,
                 )
             else:

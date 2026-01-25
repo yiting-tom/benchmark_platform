@@ -365,6 +365,17 @@ def leaderboard(request: HttpRequest, competition_id: int) -> HttpResponse:
     show_private = competition.status == CompetitionStatus.ENDED
     score_field = "private_score" if show_private else "public_score"
 
+    # Determine which metrics to show
+    from .models import MetricType
+
+    metric_choices = dict(MetricType.choices)
+    metrics_info = [
+        (competition.metric_type, metric_choices.get(competition.metric_type, competition.metric_type))
+    ]
+    for m in competition.additional_metrics.all():
+        if m.name != competition.metric_type:
+            metrics_info.append((m.name, metric_choices.get(m.name, m.name)))
+
     # Get best score per user
     # For public: use user's best public score
     # For private: use their final selection's private score
@@ -378,13 +389,20 @@ def leaderboard(request: HttpRequest, competition_id: int) -> HttpResponse:
             private_score__isnull=False,
         ).select_related("user")
 
-        leaderboard_data = []
         for s in submissions:
+            display_scores = []
+            for m_code, _ in metrics_info:
+                if m_code == competition.metric_type:
+                    display_scores.append(s.private_score)
+                else:
+                    display_scores.append((s.private_scores or {}).get(m_code))
+
             leaderboard_data.append(
                 {
                     "user_id": s.user_id,
                     "username": s.user.username,
                     "score": s.private_score,
+                    "display_scores": display_scores,
                     "submission_count": Submission.get_total_count(competition, s.user),
                     "last_submission": s.submitted_at,
                 }
@@ -393,31 +411,51 @@ def leaderboard(request: HttpRequest, competition_id: int) -> HttpResponse:
         # Use best public score per user
         from django.db.models import Max
 
-        user_best = (
+        user_max_scores = (
             Submission.objects.filter(
                 competition=competition,
                 status=SubmissionStatus.SUCCESS,
                 public_score__isnull=False,
             )
-            .values("user_id", "user__username")
-            .annotate(
-                score=Max("public_score"),
-                submission_count=Count("id"),
-                last_submission=Max("submitted_at"),
-            )
-            .order_by("-score")
+            .values("user_id")
+            .annotate(max_score=Max("public_score"))
         )
 
-        leaderboard_data = [
-            {
-                "user_id": entry["user_id"],
-                "username": entry["user__username"],
-                "score": entry["score"],
-                "submission_count": entry["submission_count"],
-                "last_submission": entry["last_submission"],
-            }
-            for entry in user_best
-        ]
+        for entry in user_max_scores:
+            # Get the actual submission object to access the JSON scores
+            s = (
+                Submission.objects.filter(
+                    competition=competition,
+                    user_id=entry["user_id"],
+                    status=SubmissionStatus.SUCCESS,
+                    public_score=entry["max_score"],
+                )
+                .order_by("-submitted_at")
+                .select_related("user")
+                .first()
+            )
+
+            if s:
+                display_scores = []
+                for m_code, _ in metrics_info:
+                    if m_code == competition.metric_type:
+                        display_scores.append(s.public_score)
+                    else:
+                        display_scores.append((s.scores or {}).get(m_code))
+
+                leaderboard_data.append(
+                    {
+                        "user_id": s.user_id,
+                        "username": s.user.username,
+                        "score": s.public_score,
+                        "display_scores": display_scores,
+                        "submission_count": Submission.get_total_count(competition, s.user),
+                        "last_submission": s.submitted_at,
+                    }
+                )
+
+    # Sort leaderboard by score descending
+    leaderboard_data.sort(key=lambda x: x["score"], reverse=True)
 
     # Sort by score (descending) and add ranks
     leaderboard_data.sort(key=lambda x: x["score"] or 0, reverse=True)
@@ -432,8 +470,10 @@ def leaderboard(request: HttpRequest, competition_id: int) -> HttpResponse:
         request,
         "competitions/partials/leaderboard.html",
         {
+            "competition": competition,
             "leaderboard": leaderboard_data,
             "show_private": show_private,
+            "metrics_info": metrics_info,
         },
     )
 

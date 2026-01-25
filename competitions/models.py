@@ -39,6 +39,21 @@ class MetricType(models.TextChoices):
     CUSTOM = "CUSTOM", "Custom Script"
 
 
+class Metric(models.Model):
+    """Evaluation metric lookup."""
+
+    name = models.CharField(
+        max_length=20, choices=MetricType.choices, unique=True, verbose_name="Metric Name"
+    )
+
+    def __str__(self):
+        return str(self.get_name_display())  # type: ignore
+
+    class Meta:
+        verbose_name = "Metric"
+        verbose_name_plural = "Metrics"
+
+
 class CompetitionStatus(models.TextChoices):
     """Competition lifecycle status."""
 
@@ -93,7 +108,13 @@ class Competition(models.Model):
         max_length=20, choices=TaskType.choices, verbose_name="Task Type"
     )
     metric_type = models.CharField(
-        max_length=20, choices=MetricType.choices, verbose_name="Metric"
+        max_length=20,
+        choices=MetricType.choices,
+        verbose_name="Primary Metric",
+        help_text="Metric used for main ranking",
+    )
+    additional_metrics = models.ManyToManyField(
+        Metric, blank=True, verbose_name="Additional Metrics"
     )
 
     # Ground truth files
@@ -251,6 +272,18 @@ class Submission(models.Model):
         blank=True,
         verbose_name="Private Score",
         help_text="Filled by Validator",
+    )
+    scores = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="All Scores",
+        help_text="Stores scores for all selected metrics",
+    )
+    private_scores = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="All Private Scores",
+        help_text="Stores private scores for all selected metrics",
     )
 
     # Final selection flag

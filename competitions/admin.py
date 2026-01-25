@@ -15,6 +15,7 @@ from .models import (
     CompetitionParticipant,
     Submission,
     SubmissionLog,
+    Metric,
 )
 
 
@@ -43,12 +44,21 @@ class CompetitionAdmin(admin.ModelAdmin):
     list_filter = ["status", "task_type", "metric_type"]
     search_fields = ["name", "description"]
     readonly_fields = ["created_at", "updated_at"]
+    filter_horizontal = ["additional_metrics"]
     inlines = [CompetitionParticipantInline]
 
     fieldsets = (
         (
             "General Information",
-            {"fields": ("name", "description", "task_type", "metric_type")},
+            {
+                "fields": (
+                    "name",
+                    "description",
+                    "task_type",
+                    "metric_type",
+                    "additional_metrics",
+                )
+            },
         ),
         (
             "Data Settings",
@@ -151,6 +161,8 @@ class SubmissionAdmin(admin.ModelAdmin):
         "prediction_file",
         "status",
         "public_score",
+        "scores",
+        "private_scores",
         "error_message",
         "submitted_at",
         "scored_at",
@@ -164,7 +176,16 @@ class SubmissionAdmin(admin.ModelAdmin):
         ),
         (
             "Scoring Results",
-            {"fields": ("status", "public_score", "private_score", "scored_at")},
+            {
+                "fields": (
+                    "status",
+                    "public_score",
+                    "private_score",
+                    "scores",
+                    "private_scores",
+                    "scored_at",
+                )
+            },
         ),
         ("Final Selection", {"fields": ("is_final_selection",)}),
         ("Error Message", {"fields": ("error_message",), "classes": ("collapse",)}),
@@ -204,3 +225,10 @@ class SubmissionLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+@admin.register(Metric)
+class MetricAdmin(admin.ModelAdmin):
+    """Admin interface for managing available metrics."""
+
+    list_display = ["name", "id"]
+    search_fields = ["name"]

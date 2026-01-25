@@ -31,7 +31,9 @@
             <tr>
                 <th>Rank</th>
                 <th>Participant</th>
-                <th>Score</th>
+                {% for _, display_name in metrics_info %}
+                <th>{{ display_name }}</th>
+                {% endfor %}
                 <th>Submissions</th>
                 <th>Last Submission</th>
             </tr>
@@ -56,9 +58,13 @@
                     <span class="badge badge-sm badge-primary ml-1">Me</span>
                     {% endif %}
                 </td>
+                {% for score in entry.display_scores %}
                 <td>
-                    <span class="font-mono text-lg">{{ entry.score|floatformat:4 }}</span>
+                    <span class="{% if forloop.first %}font-mono text-lg{% else %}font-mono{% endif %}">
+                        {{ score|floatformat:4|default:"-" }}
+                    </span>
                 </td>
+                {% endfor %}
                 <td>{{ entry.submission_count }}</td>
                 <td>{{ entry.last_submission|date:"m/d H:i" }}</td>
             </tr>
