@@ -103,6 +103,11 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Global Modal Container -->
+    <dialog id="global_modal" class="modal">
+        <div id="modal_content"></div>
+    </dialog>
+
     <!-- HTMX CSRF Configuration -->
     <script>
         document.body.addEventListener('htmx:configRequest', function (event) {

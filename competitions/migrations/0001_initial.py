@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -30,29 +29,29 @@ class Migration(migrations.Migration):
                 (
                     "name",
                     models.CharField(
-                        help_text="例如：瑕疵偵測挑戰賽",
+                        help_text="e.g., Defect Detection Challenge",
                         max_length=100,
-                        verbose_name="競賽名稱",
+                        verbose_name="Competition Name",
                     ),
                 ),
                 (
                     "description",
                     models.TextField(
                         blank=True,
-                        help_text="支援 Markdown 格式",
-                        verbose_name="競賽說明",
+                        help_text="Markdown supported",
+                        verbose_name="Description",
                     ),
                 ),
                 (
                     "task_type",
                     models.CharField(
                         choices=[
-                            ("CLASSIFICATION", "圖像分類"),
-                            ("DETECTION", "物件偵測"),
-                            ("SEGMENTATION", "影像分割"),
+                            ("CLASSIFICATION", "Image Classification"),
+                            ("DETECTION", "Object Detection"),
+                            ("SEGMENTATION", "Image Segmentation"),
                         ],
                         max_length=20,
-                        verbose_name="任務類型",
+                        verbose_name="Task Type",
                     ),
                 ),
                 (
@@ -66,64 +65,68 @@ class Migration(migrations.Migration):
                             ("MIOU", "mIoU"),
                         ],
                         max_length=20,
-                        verbose_name="評分指標",
+                        verbose_name="Metric",
                     ),
                 ),
                 (
                     "public_ground_truth",
                     models.FileField(
-                        help_text="CSV 格式",
+                        help_text="CSV format",
                         upload_to=competitions.models.competition_ground_truth_path,
-                        verbose_name="Public Set 標準答案",
+                        verbose_name="Public Ground Truth",
                     ),
                 ),
                 (
                     "private_ground_truth",
                     models.FileField(
                         blank=True,
-                        help_text="CSV 格式，僅 Validator 可見",
+                        help_text="CSV format, only visible to Validators",
                         null=True,
                         upload_to=competitions.models.competition_ground_truth_path,
-                        verbose_name="Private Set 標準答案",
+                        verbose_name="Private Ground Truth",
                     ),
                 ),
                 (
                     "dataset_url",
-                    models.URLField(blank=True, verbose_name="資料集下載連結"),
+                    models.URLField(blank=True, verbose_name="Dataset Download URL"),
                 ),
                 (
                     "daily_upload_limit",
-                    models.PositiveIntegerField(default=5, verbose_name="每日上傳上限"),
+                    models.PositiveIntegerField(
+                        default=5, verbose_name="Daily Upload Limit"
+                    ),
                 ),
                 (
                     "total_upload_limit",
-                    models.PositiveIntegerField(default=100, verbose_name="總上傳上限"),
+                    models.PositiveIntegerField(
+                        default=100, verbose_name="Total Upload Limit"
+                    ),
                 ),
                 (
                     "status",
                     models.CharField(
                         choices=[
-                            ("DRAFT", "草稿"),
-                            ("ACTIVE", "進行中"),
-                            ("ENDED", "已結束"),
+                            ("DRAFT", "Draft"),
+                            ("ACTIVE", "Active"),
+                            ("ENDED", "Ended"),
                         ],
                         default="DRAFT",
                         max_length=20,
-                        verbose_name="狀態",
+                        verbose_name="Status",
                     ),
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="建立時間"),
+                    models.DateTimeField(auto_now_add=True, verbose_name="Created At"),
                 ),
                 (
                     "updated_at",
-                    models.DateTimeField(auto_now=True, verbose_name="更新時間"),
+                    models.DateTimeField(auto_now=True, verbose_name="Updated At"),
                 ),
             ],
             options={
-                "verbose_name": "競賽",
-                "verbose_name_plural": "競賽",
+                "verbose_name": "Competition",
+                "verbose_name_plural": "Competitions",
                 "ordering": ["-created_at"],
             },
         ),
@@ -143,21 +146,21 @@ class Migration(migrations.Migration):
                     "prediction_file",
                     models.FileField(
                         upload_to=competitions.models.submission_prediction_path,
-                        verbose_name="預測檔案",
+                        verbose_name="Prediction File",
                     ),
                 ),
                 (
                     "status",
                     models.CharField(
                         choices=[
-                            ("PENDING", "等待中"),
-                            ("PROCESSING", "處理中"),
-                            ("SUCCESS", "成功"),
-                            ("FAILED", "失敗"),
+                            ("PENDING", "Pending"),
+                            ("PROCESSING", "Processing"),
+                            ("SUCCESS", "Success"),
+                            ("FAILED", "Failed"),
                         ],
                         default="PENDING",
                         max_length=20,
-                        verbose_name="狀態",
+                        verbose_name="Status",
                     ),
                 ),
                 (
@@ -170,7 +173,7 @@ class Migration(migrations.Migration):
                     "private_score",
                     models.FloatField(
                         blank=True,
-                        help_text="由 Validator 填入",
+                        help_text="Filled by Validator",
                         null=True,
                         verbose_name="Private Score",
                     ),
@@ -179,22 +182,24 @@ class Migration(migrations.Migration):
                     "is_final_selection",
                     models.BooleanField(
                         default=False,
-                        help_text="勾選此項作為最終評分版本",
-                        verbose_name="最終決定版",
+                        help_text="Mark this as the final version for scoring",
+                        verbose_name="Final Selection",
                     ),
                 ),
                 (
                     "error_message",
-                    models.TextField(blank=True, verbose_name="錯誤訊息"),
+                    models.TextField(blank=True, verbose_name="Error Message"),
                 ),
                 (
                     "submitted_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="提交時間"),
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Submitted At"
+                    ),
                 ),
                 (
                     "scored_at",
                     models.DateTimeField(
-                        blank=True, null=True, verbose_name="算分完成時間"
+                        blank=True, null=True, verbose_name="Scored At"
                     ),
                 ),
                 (
@@ -203,7 +208,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="submissions",
                         to="competitions.competition",
-                        verbose_name="競賽",
+                        verbose_name="Competition",
                     ),
                 ),
                 (
@@ -212,13 +217,13 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="submissions",
                         to=settings.AUTH_USER_MODEL,
-                        verbose_name="提交者",
+                        verbose_name="Submitter",
                     ),
                 ),
             ],
             options={
-                "verbose_name": "提交紀錄",
-                "verbose_name_plural": "提交紀錄",
+                "verbose_name": "Submission",
+                "verbose_name_plural": "Submissions",
                 "ordering": ["-submitted_at"],
             },
         ),
@@ -244,13 +249,13 @@ class Migration(migrations.Migration):
                         ],
                         default="INFO",
                         max_length=10,
-                        verbose_name="等級",
+                        verbose_name="Level",
                     ),
                 ),
-                ("message", models.TextField(verbose_name="訊息")),
+                ("message", models.TextField(verbose_name="Message")),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="時間"),
+                    models.DateTimeField(auto_now_add=True, verbose_name="Created At"),
                 ),
                 (
                     "submission",
@@ -258,13 +263,13 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="logs",
                         to="competitions.submission",
-                        verbose_name="提交紀錄",
+                        verbose_name="Submission",
                     ),
                 ),
             ],
             options={
-                "verbose_name": "算分日誌",
-                "verbose_name_plural": "算分日誌",
+                "verbose_name": "Scoring Log",
+                "verbose_name_plural": "Scoring Logs",
                 "ordering": ["created_at"],
             },
         ),
@@ -280,19 +285,19 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("start_time", models.DateTimeField(verbose_name="開始時間")),
-                ("end_time", models.DateTimeField(verbose_name="結束時間")),
+                ("start_time", models.DateTimeField(verbose_name="Start Time")),
+                ("end_time", models.DateTimeField(verbose_name="End Time")),
                 (
                     "is_active",
                     models.BooleanField(
                         default=True,
-                        help_text="取消勾選可暫停該使用者的參賽權限",
-                        verbose_name="啟用",
+                        help_text="Uncheck to suspend participation",
+                        verbose_name="Active",
                     ),
                 ),
                 (
                     "created_at",
-                    models.DateTimeField(auto_now_add=True, verbose_name="建立時間"),
+                    models.DateTimeField(auto_now_add=True, verbose_name="Created At"),
                 ),
                 (
                     "competition",
@@ -300,7 +305,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="participants",
                         to="competitions.competition",
-                        verbose_name="競賽",
+                        verbose_name="Competition",
                     ),
                 ),
                 (
@@ -309,13 +314,13 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="competition_participations",
                         to=settings.AUTH_USER_MODEL,
-                        verbose_name="參賽者",
+                        verbose_name="Participant",
                     ),
                 ),
             ],
             options={
-                "verbose_name": "參賽白名單",
-                "verbose_name_plural": "參賽白名單",
+                "verbose_name": "Competition Participant",
+                "verbose_name_plural": "Competition Participants",
                 "indexes": [
                     models.Index(
                         fields=["competition", "user"],

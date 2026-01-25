@@ -1,0 +1,36 @@
+<!-- HTMX partial: Submission logs modal content -->
+<div class="modal-box max-w-2xl">
+    <form method="dialog">
+        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+    <h3 class="font-bold text-lg mb-4">
+        Logs for Submission #{{ submission.id }}
+        <span class="badge {% if submission.status == 'SUCCESS' %}badge-success{% elif submission.status == 'FAILED' %}badge-error{% else %}badge-info{% endif %} ml-2">
+            {{ submission.get_status_display }}
+        </span>
+    </h3>
+
+    {% if logs %}
+    <div class="bg-base-300 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto space-y-1">
+        {% for log in logs %}
+        <div class="flex gap-2">
+            <span class="text-slate-500 whitespace-nowrap">[{{ log.created_at|date:"H:i:s" }}]</span>
+            <span class="{% if log.level == 'ERROR' %}text-error{% elif log.level == 'WARNING' %}text-warning{% else %}text-info{% endif %} font-bold w-16">
+                [{{ log.level }}]
+            </span>
+            <span class="flex-1">{{ log.message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-8 text-slate-400">
+        No logs available for this submission.
+    </div>
+    {% endif %}
+
+    <div class="modal-action">
+        <form method="dialog">
+            <button class="btn">Close</button>
+        </form>
+    </div>
+</div>

@@ -56,9 +56,15 @@
                     {% endif %}
                 </td>
                 <td>
-                    <a href="{{ submission.prediction_file.url }}" class="btn btn-xs btn-ghost" download>
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                    </a>
+                    <div class="flex gap-1">
+                        <a href="{{ submission.prediction_file.url }}" class="btn btn-xs btn-ghost" download>
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </a>
+                        <button class="btn btn-xs btn-ghost" hx-get="{% url 'submission_logs' submission.id %}"
+                            hx-target="#modal_content" hx-on::after-request="global_modal.showModal()">
+                            <i data-lucide="terminal" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
