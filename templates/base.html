@@ -74,9 +74,14 @@
                     <li><a href="{% url 'admin:index' %}">
                             <i data-lucide="settings" class="w-4 h-4"></i> Admin Panel
                         </a></li>
-                    <li><a href="{% url 'logout' %}">
-                            <i data-lucide="log-out" class="w-4 h-4"></i> Logout
-                        </a></li>
+                    <li>
+                        <form action="{% url 'logout' %}" method="post" class="p-0">
+                            {% csrf_token %}
+                            <button type="submit" class="flex items-center gap-2 w-full px-4 py-2">
+                                <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                            </button>
+                        </form>
+                    </li>
                 </ul>
             </div>
             {% else %}
