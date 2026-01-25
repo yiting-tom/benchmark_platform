@@ -8,7 +8,7 @@ class UserRegistrationForm(UserCreationForm):
     Custom user registration form with username whitelist validation.
     """
 
-    class Meta(UserCreationForm.Meta):
+    class Meta:
         model = User
         fields = ("username", "email")
 

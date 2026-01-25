@@ -1,0 +1,97 @@
+<div class="modal-box max-w-4xl">
+    <form method="dialog">
+        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+
+    <div class="flex items-center gap-3 mb-6">
+        <div class="bg-primary/20 p-2 rounded-lg">
+            <i data-lucide="bar-chart-3" class="w-6 h-6 text-primary"></i>
+        </div>
+        <div>
+            <h3 class="font-bold text-xl text-base-content">
+                Performance Report: Submission #{{ submission.id }}
+            </h3>
+            <p class="text-sm text-base-content/60">
+                Classification detailed metrics breakdown
+            </p>
+        </div>
+    </div>
+
+    {% if class_metrics %}
+    <div class="overflow-x-auto border border-base-300 rounded-box mb-6">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr class="bg-base-200">
+                    <th>Class Name</th>
+                    <th class="text-right">Precision</th>
+                    <th class="text-right">Recall</th>
+                    <th class="text-right">F1-Score</th>
+                    <th class="text-right">Support</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for label, data in class_metrics.items %}
+                <tr>
+                    <td class="font-semibold">{{ label }}</td>
+                    <td class="text-right font-mono">
+                        <span
+                            class="{% if data.precision < 0.5 %}text-error{% elif data.precision < 0.8 %}text-warning{% else %}text-success{% endif %}">
+                            {{ data.precision|floatformat:4 }}
+                        </span>
+                    </td>
+                    <td class="text-right font-mono">
+                        <span
+                            class="{% if data.recall < 0.5 %}text-error{% elif data.recall < 0.8 %}text-warning{% else %}text-success{% endif %}">
+                            {{ data.recall|floatformat:4 }}
+                        </span>
+                    </td>
+                    <td class="text-right font-mono font-bold">
+                        <span
+                            class="{% if data.f1_score < 0.5 %}text-error{% elif data.f1_score < 0.8 %}text-warning{% else %}text-success{% endif %}">
+                            {{ data.f1_score|floatformat:4 }}
+                        </span>
+                    </td>
+                    <td class="text-right text-base-content/60">{{ data.support|floatformat:0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Summary Metrics -->
+    {% if summary_metrics %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        {% if summary_metrics.accuracy is not None %}
+        <div class="stats shadow bg-base-100 border border-base-300">
+            <div class="stat">
+                <div class="stat-title">Overall Accuracy</div>
+                <div class="stat-value text-primary">{{ summary_metrics.accuracy|floatformat:4 }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if summary_metrics.macro_avg %}
+        <div class="stats shadow bg-base-100 border border-base-300">
+            <div class="stat">
+                <div class="stat-title">Macro F1-Score</div>
+                <div class="stat-value text-secondary">{{ summary_metrics.macro_avg.f1_score|floatformat:4 }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="alert alert-info">
+        <i data-lucide="info" class="w-5 h-5"></i>
+        <span>No detailed metrics available for this submission yet. Class-wise breakdown is only available for
+            Classification tasks.</span>
+    </div>
+    {% endif %}
+
+    <div class="modal-action">
+        <form method="dialog">
+            <button class="btn btn-primary">Close</button>
+        </form>
+    </div>
+</div>

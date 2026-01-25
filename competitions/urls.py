@@ -41,4 +41,9 @@ urlpatterns = [
         views.submission_logs,
         name="submission_logs",
     ),
+    path(
+        "submission/<int:submission_id>/report/",
+        views.submission_report,
+        name="submission_report",
+    ),
 ]

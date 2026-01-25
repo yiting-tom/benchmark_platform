@@ -22,6 +22,7 @@ from django.http import HttpRequest
 from .models import (
     Competition,
     CompetitionParticipant,
+    Submission,
     SubmissionStatus,
     CompetitionStatus,
     RegistrationWhitelist,
@@ -317,6 +318,47 @@ def submission_logs(request: HttpRequest, submission_id: int) -> HttpResponse:
         request,
         "competitions/partials/logs_modal.html",
         {"submission": submission, "logs": logs},
+    )
+
+
+@login_required
+def submission_report(request: HttpRequest, submission_id: int) -> HttpResponse:
+    """Get detailed per-class metrics report (HTMX endpoint)."""
+    submission = get_object_or_404(Submission, id=submission_id, user=request.user)
+    
+    # Extract per-class report from metrics JSON
+    # Structure from classification engine: metrics['per_class_report']
+    metrics = submission.scores or {}
+    per_class = metrics.get("per_class_report", {})
+    
+    # Clean up: exclude 'accuracy', 'macro avg', etc. from classes if they exist in sklearn report
+    standard_keys = ["accuracy", "macro avg", "weighted avg"]
+    class_metrics = {}
+    for label, data in per_class.items():
+        if label not in standard_keys:
+            # Rename f1-score to f1_score for better template access
+            cleaned_data = {k.replace("-", "_"): v for k, v in data.items()}
+            class_metrics[label] = cleaned_data
+
+    summary_metrics = {}
+    for k in standard_keys:
+        if k in per_class:
+            val = per_class[k]
+            if isinstance(val, dict):
+                summary_metrics[k.replace(" ", "_")] = {
+                    k2.replace("-", "_"): v for k2, v in val.items()
+                }
+            else:
+                summary_metrics[k.replace(" ", "_")] = val
+
+    return render(
+        request,
+        "competitions/partials/report_modal.html",
+        {
+            "submission": submission,
+            "class_metrics": class_metrics,
+            "summary_metrics": summary_metrics,
+        },
     )
 
 
