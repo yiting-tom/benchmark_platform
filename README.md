@@ -73,7 +73,7 @@ docker-compose exec web python manage.py createsuperuser
 
 | Task Type | Metric |
 |-----------|--------|
-| Classification | Accuracy, F1-Score |
+| Classification | Accuracy (Micro/Macro), F1-Score (Micro/Macro), Precision (Micro/Macro), Recall (Micro/Macro) |
 | Detection | mAP@0.5, mAP@0.75, mAP@[0.5:0.95], Precision, Recall |
 | Segmentation | mIoU |
 | **All Tasks** | **Custom Script** (via Python upload) |

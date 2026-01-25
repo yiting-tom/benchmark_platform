@@ -10,7 +10,14 @@ Example: filename, label OR image_id, label
 
 import pandas as pd
 from pathlib import Path
-from sklearn.metrics import accuracy_score, f1_score, classification_report
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    balanced_accuracy_score,
+    classification_report,
+)
 
 from .base import BaseScoringEngine, ScoringResult
 
@@ -126,17 +133,45 @@ class ClassificationScoringEngine(BaseScoringEngine):
         y_pred = merged[label_pred_col]
 
         # Calculate metrics
-        accuracy = accuracy_score(y_true, y_pred)
-        f1_macro = f1_score(y_true, y_pred, average="macro", zero_division=0)
+        metrics_dict = {
+            "accuracy": accuracy_score(y_true, y_pred),
+            "accuracy_macro": balanced_accuracy_score(y_true, y_pred),
+            "f1_macro": f1_score(y_true, y_pred, average="macro", zero_division=0),
+            "f1_micro": f1_score(y_true, y_pred, average="micro", zero_division=0),
+            "precision_macro": precision_score(
+                y_true, y_pred, average="macro", zero_division=0
+            ),
+            "precision_micro": precision_score(
+                y_true, y_pred, average="micro", zero_division=0
+            ),
+            "recall_macro": recall_score(
+                y_true, y_pred, average="macro", zero_division=0
+            ),
+            "recall_micro": recall_score(
+                y_true, y_pred, average="micro", zero_division=0
+            ),
+        }
 
-        self.log(f"Accuracy: {accuracy:.4f}")
-        self.log(f"F1 (macro): {f1_macro:.4f}")
+        # Log main metrics
+        self.log(f"Accuracy: {metrics_dict['accuracy']:.4f}")
+        self.log(f"F1 (macro): {metrics_dict['f1_macro']:.4f}")
 
-        # Determine primary score based on metric_type
-        if self.metric_type == "F1":
-            primary_score = f1_macro
-        else:
-            primary_score = accuracy
+        # Map metric_type to primary score
+        score_map = {
+            "ACCURACY": metrics_dict["accuracy"],
+            "ACCURACY_MICRO": metrics_dict["accuracy"],
+            "ACCURACY_MACRO": metrics_dict["accuracy_macro"],
+            "F1": metrics_dict["f1_macro"],
+            "F1_MACRO": metrics_dict["f1_macro"],
+            "F1_MICRO": metrics_dict["f1_micro"],
+            "PRECISION": metrics_dict["precision_macro"],
+            "PRECISION_MACRO": metrics_dict["precision_macro"],
+            "PRECISION_MICRO": metrics_dict["precision_micro"],
+            "RECALL": metrics_dict["recall_macro"],
+            "RECALL_MACRO": metrics_dict["recall_macro"],
+            "RECALL_MICRO": metrics_dict["recall_micro"],
+        }
+        primary_score = score_map.get(self.metric_type, metrics_dict["accuracy"])
 
         # Generate per-class report
         try:
@@ -148,10 +183,9 @@ class ClassificationScoringEngine(BaseScoringEngine):
 
         return ScoringResult(
             success=True,
-            score=round(primary_score, 6),
+            score=round(float(primary_score), 6),
             metrics={
-                "accuracy": round(accuracy, 6),
-                "f1_macro": round(f1_macro, 6),
+                **{k: round(float(v), 6) for k, v in metrics_dict.items()},
                 "total_samples": len(merged),
                 "missing_predictions": int(missing_count),
                 "per_class_report": report,
