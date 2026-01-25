@@ -294,10 +294,20 @@ def upload_prediction(request: HttpRequest, competition_id: int) -> HttpResponse
 
 def _get_expected_columns(competition: Competition) -> List[str]:
     """Helper to get expected columns for a task type."""
+    import pandas as pd
     from .models import TaskType
 
+    # Try to get columns from ground truth file first
+    if competition.public_ground_truth:
+        try:
+            df = pd.read_csv(competition.public_ground_truth.path, nrows=0)
+            return list(df.columns)
+        except Exception:
+            # Fallback if file read fails
+            pass
+
     if competition.task_type == TaskType.CLASSIFICATION:
-        return ["image_id", "label"]
+        return ["filename", "label"]
     elif competition.task_type == TaskType.DETECTION:
         return ["image_id", "class_id", "confidence", "xmin", "ymin", "xmax", "ymax"]
     elif competition.task_type == TaskType.SEGMENTATION:
