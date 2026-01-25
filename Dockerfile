@@ -60,5 +60,9 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Default command (can be overridden in docker-compose)
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2"]
+# Copy startup script
+COPY --chown=appuser:appuser scripts/start.sh /app/scripts/start.sh
+RUN chmod +x /app/scripts/start.sh
+
+# Default command
+CMD ["/app/scripts/start.sh"]
