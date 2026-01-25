@@ -12,6 +12,7 @@ from competitions.models import (
 from .engines.classification import ClassificationScoringEngine
 from .engines.detection import DetectionScoringEngine
 from .engines.segmentation import SegmentationScoringEngine
+from .engines.custom import CustomScoringEngine
 
 
 def get_scoring_engine(competition: Competition, ground_truth_path: str = None):
@@ -32,6 +33,11 @@ def get_scoring_engine(competition: Competition, ground_truth_path: str = None):
         ground_truth_path = competition.public_ground_truth.path
 
     metric_type = competition.metric_type
+
+    if competition.metric_type == MetricType.CUSTOM:
+        if not competition.scoring_script:
+            raise ValueError("Competition set to CUSTOM metric but no scoring script uploaded.")
+        return CustomScoringEngine(ground_truth_path, competition.scoring_script.path)
 
     if competition.task_type == TaskType.CLASSIFICATION:
         return ClassificationScoringEngine(ground_truth_path, metric_type)

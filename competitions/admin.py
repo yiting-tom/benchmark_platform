@@ -52,10 +52,17 @@ class CompetitionAdmin(admin.ModelAdmin):
         ),
         (
             "Data Settings",
-            {"fields": ("public_ground_truth", "private_ground_truth", "dataset_url")},
+            {
+                "fields": (
+                    "public_ground_truth",
+                    "private_ground_truth",
+                    "scoring_script",
+                    "dataset_url",
+                )
+            },
         ),
         ("Upload Limits", {"fields": ("daily_upload_limit", "total_upload_limit")}),
-        ("Status", {"fields": ("status",)}),
+        ("Status", {"fields": ("status", "private_scoring_completed")}),
         (
             "Timestamps",
             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},

@@ -32,6 +32,7 @@ class MetricType(models.TextChoices):
     PRECISION = "PRECISION", "Precision"
     RECALL = "RECALL", "Recall"
     AP75 = "AP75", "mAP@0.75"
+    CUSTOM = "CUSTOM", "Custom Script"
 
 
 class CompetitionStatus(models.TextChoices):
@@ -101,6 +102,13 @@ class Competition(models.Model):
         upload_to=competition_ground_truth_path,
         verbose_name="Private Ground Truth",
         help_text="CSV format, only visible to Validators",
+        blank=True,
+        null=True,
+    )
+    scoring_script = models.FileField(
+        upload_to="competitions/scoring_scripts/",
+        verbose_name="Scoring Script",
+        help_text="Custom Python script for scoring. Must implement calculate_score function.",
         blank=True,
         null=True,
     )
