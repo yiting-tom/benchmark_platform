@@ -10,6 +10,7 @@ Prediction must match: [id_col], [class_col], [rle_mask_col]
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from collections import defaultdict
 
 from .base import BaseScoringEngine, ScoringResult
@@ -82,18 +83,18 @@ class SegmentationScoringEngine(BaseScoringEngine):
     Column names are auto-detected from the Ground Truth file.
     """
 
-    REQUIRED_COLUMNS = []  # Set dynamically
+    REQUIRED_COLUMNS: list[str] = []  # Set dynamically
 
-    def __init__(self, ground_truth_path, metric_type: str = "MIOU"):
+    def __init__(self, ground_truth_path: str | Path, metric_type: str = "MIOU"):
         super().__init__(ground_truth_path)
-        self.metric_type = metric_type
-        self.image_dimensions = {}
+        self.metric_type: str = metric_type
+        self.image_dimensions: dict[str, tuple[int, int]] = {}
         # Column names (auto-detected)
-        self.id_col = None
-        self.class_col = None
-        self.rle_col = None
-        self.height_col = None
-        self.width_col = None
+        self.id_col: str | None = None
+        self.class_col: str | None = None
+        self.rle_col: str | None = None
+        self.height_col: str | None = None
+        self.width_col: str | None = None
 
     def load_ground_truth(self) -> bool:
         """Load ground truth and auto-detect column names."""

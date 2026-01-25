@@ -16,6 +16,8 @@ from django.utils import timezone
 from django.views import View
 from django.views.decorators.http import require_POST
 from django_q.tasks import async_task
+from typing import Any, Dict, List, Optional, Union
+from django.http import HttpRequest
 
 from .models import (
     Competition,
@@ -29,7 +31,7 @@ from .models import (
 class CompetitionListView(LoginRequiredMixin, View):
     """List competitions the current user can participate in."""
 
-    def get(self, request):
+    def get(self, request: HttpRequest) -> HttpResponse:
         now = timezone.now()
 
         # Get all participations for this user
@@ -38,7 +40,7 @@ class CompetitionListView(LoginRequiredMixin, View):
             is_active=True,
         ).select_related("competition")
 
-        competitions = []
+        competitions: List[Dict[str, Any]] = []
         for p in participations:
             # Check if within time window
             is_active = (
@@ -66,7 +68,7 @@ class CompetitionListView(LoginRequiredMixin, View):
 class CompetitionDetailView(LoginRequiredMixin, View):
     """Competition detail page with upload form."""
 
-    def get(self, request, competition_id):
+    def get(self, request: HttpRequest, competition_id: int) -> HttpResponse:
         competition = get_object_or_404(Competition, id=competition_id)
 
         # Check if user is a participant
@@ -123,7 +125,7 @@ class CompetitionDetailView(LoginRequiredMixin, View):
             },
         )
 
-    def _get_expected_format(self, competition):
+    def _get_expected_format(self, competition: Competition) -> str:
         """Detect expected CSV format from ground truth file."""
         import pandas as pd
         from .models import TaskType
@@ -159,7 +161,7 @@ class CompetitionDetailView(LoginRequiredMixin, View):
 
 @login_required
 @require_POST
-def upload_prediction(request, competition_id):
+def upload_prediction(request: HttpRequest, competition_id: int) -> HttpResponse:
     """Handle prediction file upload (HTMX endpoint)."""
     competition = get_object_or_404(Competition, id=competition_id)
 
@@ -274,7 +276,7 @@ def upload_prediction(request, competition_id):
     )
 
 
-def _get_expected_columns(competition):
+def _get_expected_columns(competition: Competition) -> List[str]:
     """Helper to get expected columns for a task type."""
     from .models import TaskType
 
@@ -288,7 +290,7 @@ def _get_expected_columns(competition):
 
 
 @login_required
-def submission_logs(request, submission_id):
+def submission_logs(request: HttpRequest, submission_id: int) -> HttpResponse:
     """Get submission logs (HTMX endpoint)."""
     submission = get_object_or_404(Submission, id=submission_id, user=request.user)
 
@@ -302,7 +304,7 @@ def submission_logs(request, submission_id):
 
 
 @login_required
-def submission_history(request, competition_id):
+def submission_history(request: HttpRequest, competition_id: int) -> HttpResponse:
     """Get submission history for current user (HTMX endpoint)."""
     competition = get_object_or_404(Competition, id=competition_id)
 
@@ -317,7 +319,7 @@ def submission_history(request, competition_id):
 
 @login_required
 @require_POST
-def set_final_selection(request, submission_id):
+def set_final_selection(request: HttpRequest, submission_id: int) -> HttpResponse:
     """Set a submission as the final selection (HTMX endpoint)."""
     submission = get_object_or_404(
         Submission, id=submission_id, user=request.user, status=SubmissionStatus.SUCCESS
@@ -339,7 +341,7 @@ def set_final_selection(request, submission_id):
 
 
 @login_required
-def leaderboard(request, competition_id):
+def leaderboard(request: HttpRequest, competition_id: int) -> HttpResponse:
     """Get competition leaderboard (HTMX endpoint)."""
     competition = get_object_or_404(Competition, id=competition_id)
 
@@ -350,6 +352,7 @@ def leaderboard(request, competition_id):
     # Get best score per user
     # For public: use user's best public score
     # For private: use their final selection's private score
+    leaderboard_data: List[Dict[str, Any]] = []
 
     if show_private:
         # Use final selections only
@@ -418,7 +421,7 @@ def leaderboard(request, competition_id):
 
 
 @login_required
-def leaderboard_chart_data(request, competition_id):
+def leaderboard_chart_data(request: HttpRequest, competition_id: int) -> JsonResponse:
     """Return JSON data for leaderboard charts."""
     from collections import defaultdict
 

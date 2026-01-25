@@ -22,7 +22,7 @@ class CustomScoringEngine(BaseScoringEngine):
     Scoring engine that delegates to a user-provided Python script.
     """
 
-    def __init__(self, ground_truth_path, script_path: str | Path):
+    def __init__(self, ground_truth_path: str | Path, script_path: str | Path):
         """
         Initialize the custom scorer.
 
@@ -31,9 +31,9 @@ class CustomScoringEngine(BaseScoringEngine):
             script_path: Path to the Python scoring script.
         """
         super().__init__(ground_truth_path)
-        self.script_path = Path(script_path)
-        self.custom_module = None
-        self.scorer_instance = None
+        self.script_path: Path = Path(script_path)
+        self.custom_module: Any | None = None
+        self.scorer_instance: BaseScoringEngine | None = None
 
     def _load_script(self):
         """Dynamic load the scoring script."""

@@ -9,6 +9,7 @@ Example: filename, label OR image_id, label
 """
 
 import pandas as pd
+from pathlib import Path
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 
 from .base import BaseScoringEngine, ScoringResult
@@ -25,9 +26,9 @@ class ClassificationScoringEngine(BaseScoringEngine):
     Column names are auto-detected from the Ground Truth file.
     """
 
-    REQUIRED_COLUMNS = []  # Will be set dynamically from ground truth
+    REQUIRED_COLUMNS: list[str] = []  # Will be set dynamically from ground truth
 
-    def __init__(self, ground_truth_path, metric_type: str = "ACCURACY"):
+    def __init__(self, ground_truth_path: str | Path, metric_type: str = "ACCURACY"):
         """
         Initialize the classification scorer.
 
@@ -36,9 +37,9 @@ class ClassificationScoringEngine(BaseScoringEngine):
             metric_type: Either "ACCURACY" or "F1".
         """
         super().__init__(ground_truth_path)
-        self.metric_type = metric_type
-        self.id_column = None
-        self.label_column = None
+        self.metric_type: str = metric_type
+        self.id_column: str | None = None
+        self.label_column: str | None = None
 
     def load_ground_truth(self) -> bool:
         """Load ground truth and auto-detect column names."""

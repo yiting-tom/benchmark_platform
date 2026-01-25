@@ -6,9 +6,12 @@ It can either define a `calculate_score` function or a `CustomScorer` class.
 """
 
 import pandas as pd
+from typing import Any, Dict, Union
 
 
-def calculate_score(prediction_df, ground_truth_df, **kwargs):
+def calculate_score(
+    prediction_df: pd.DataFrame, ground_truth_df: pd.DataFrame, **kwargs: Any
+) -> Union[float, Dict[str, Any]]:
     """
     Simple scoring function that calculates the ratio of exact matches.
 

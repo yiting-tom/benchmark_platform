@@ -51,12 +51,12 @@ def get_scoring_engine(competition: Competition, ground_truth_path: str = None):
 
 def add_submission_log(
     submission: Submission, message: str, level: str = LogLevel.INFO
-):
+) -> None:
     """Helper to add a log entry to a submission."""
     SubmissionLog.objects.create(submission=submission, level=level, message=message)
 
 
-def score_submission(submission_id: int) -> dict:
+def score_submission(submission_id: int) -> dict[str, bool | int | str]:
     """
     Score a single submission.
 
@@ -148,7 +148,7 @@ def score_submission(submission_id: int) -> dict:
         return {"success": False, "submission_id": submission_id, "error": str(e)}
 
 
-def score_private_submissions(competition_id: int):
+def score_private_submissions(competition_id: int) -> dict[str, bool | int | str | list[str]]:
     """
     Score all final submissions for a competition using private ground truth.
 

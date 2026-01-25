@@ -10,6 +10,7 @@ Prediction must add: confidence column
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from collections import defaultdict
 
 from .base import BaseScoringEngine, ScoringResult
@@ -79,18 +80,18 @@ class DetectionScoringEngine(BaseScoringEngine):
     Column names are auto-detected from the Ground Truth file.
     """
 
-    REQUIRED_COLUMNS = []  # Set dynamically
+    REQUIRED_COLUMNS: list[str] = []  # Set dynamically
 
-    def __init__(self, ground_truth_path, metric_type: str = "MAP"):
+    def __init__(self, ground_truth_path: str | Path, metric_type: str = "MAP"):
         super().__init__(ground_truth_path)
-        self.metric_type = metric_type
+        self.metric_type: str = metric_type
         # Column names (auto-detected)
-        self.id_col = None
-        self.class_col = None
-        self.xmin_col = None
-        self.ymin_col = None
-        self.xmax_col = None
-        self.ymax_col = None
+        self.id_col: str | None = None
+        self.class_col: str | None = None
+        self.xmin_col: str | None = None
+        self.ymin_col: str | None = None
+        self.xmax_col: str | None = None
+        self.ymax_col: str | None = None
 
     def load_ground_truth(self) -> bool:
         """Load ground truth and auto-detect column names."""

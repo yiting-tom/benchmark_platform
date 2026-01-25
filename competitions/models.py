@@ -11,6 +11,10 @@ This module defines the core data models:
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from typing import TYPE_CHECKING, List, Tuple, Optional
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
 
 
 class TaskType(models.TextChoices):
@@ -196,13 +200,13 @@ class CompetitionParticipant(models.Model):
     def __str__(self):
         return f"{self.user} @ {self.competition}"
 
-    def is_within_time_window(self):
+    def is_within_time_window(self) -> bool:
         """Check if current time is within the participation window."""
         now = timezone.now()
         return self.start_time <= now <= self.end_time
 
-    def can_participate(self):
-        """Check if user can currently participate (active + within time)."""
+    def can_participate(self) -> bool:
+        """Check if user is active and within time window."""
         return self.is_active and self.is_within_time_window()
 
 
@@ -276,7 +280,7 @@ class Submission(models.Model):
         return f"Submission #{self.id} by {self.user}"
 
     @classmethod
-    def get_today_count(cls, competition, user):
+    def get_today_count(cls, competition: "Competition", user: "User") -> int:
         """Get number of submissions by this user today."""
         today = timezone.now().date()
         return cls.objects.filter(
@@ -284,11 +288,11 @@ class Submission(models.Model):
         ).count()
 
     @classmethod
-    def get_total_count(cls, competition, user):
+    def get_total_count(cls, competition: "Competition", user: "User") -> int:
         """Get total number of submissions by this user."""
         return cls.objects.filter(competition=competition, user=user).count()
 
-    def can_submit_more_today(self):
+    def can_submit_more_today(self) -> bool:
         """Check if user hasn't exceeded daily limit."""
         today_count = self.get_today_count(self.competition, self.user)
         return today_count < self.competition.daily_upload_limit
