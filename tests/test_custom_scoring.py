@@ -54,4 +54,10 @@ def calculate_score(prediction_df, ground_truth_df, **kwargs):
         
         engine = get_scoring_engine(competition)
         self.assertIsInstance(engine, CustomScoringEngine)
-        self.assertEqual(Path(engine.script_path), Path(competition.scoring_script.path))
+        # Cast to CustomScoringEngine to access script_path
+        from typing import cast
+
+        custom_engine = cast(CustomScoringEngine, engine)
+        self.assertEqual(
+            Path(custom_engine.script_path), Path(competition.scoring_script.path)
+        )

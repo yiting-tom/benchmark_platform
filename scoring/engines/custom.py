@@ -11,6 +11,7 @@ import importlib.util
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -47,6 +48,10 @@ class CustomScoringEngine(BaseScoringEngine):
         try:
             module_name = f"custom_scorer_{os.path.basename(self.script_path).replace('.', '_')}"
             spec = importlib.util.spec_from_file_location(module_name, self.script_path)
+            if spec is None or spec.loader is None:
+                self.log(f"Failed to create module spec for {self.script_path}", "ERROR")
+                return False
+
             module = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = module
             spec.loader.exec_module(module)

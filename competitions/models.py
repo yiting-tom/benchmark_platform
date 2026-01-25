@@ -217,6 +217,7 @@ class Submission(models.Model):
     Tracks the upload, scoring status, and both public/private scores.
     """
 
+    id: int  # Explicitly typed for static analysis
     competition = models.ForeignKey(
         Competition,
         on_delete=models.CASCADE,

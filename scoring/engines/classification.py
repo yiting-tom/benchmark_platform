@@ -43,7 +43,7 @@ class ClassificationScoringEngine(BaseScoringEngine):
 
     def load_ground_truth(self) -> bool:
         """Load ground truth and auto-detect column names."""
-        if not super().load_ground_truth():
+        if not super().load_ground_truth() or self.ground_truth_df is None:
             return False
 
         # Auto-detect columns from ground truth
@@ -98,6 +98,11 @@ class ClassificationScoringEngine(BaseScoringEngine):
         Returns:
             ScoringResult with accuracy/F1 and per-class metrics.
         """
+        if self.id_column is None or self.label_column is None:
+            return ScoringResult(
+                success=False, error_message="Column names not auto-detected"
+            )
+
         # Merge on ID column to align predictions with ground truth
         merged = pd.merge(
             ground_truth_df,

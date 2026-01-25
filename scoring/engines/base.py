@@ -156,6 +156,12 @@ class BaseScoringEngine(ABC):
 
         # Calculate score
         try:
+            if self.ground_truth_df is None:
+                return ScoringResult(
+                    success=False,
+                    error_message="Ground truth not loaded",
+                    logs=self.logs,
+                )
             result = self.calculate_score(prediction_df, self.ground_truth_df)
             result.logs = self.logs + (result.logs or [])
             return result

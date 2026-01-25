@@ -15,6 +15,7 @@ from scoring.tasks import score_private_submissions
 import os
 import pandas as pd
 from pathlib import Path
+from datetime import timedelta
 
 
 class IntegrationTest(TestCase):
@@ -47,8 +48,8 @@ class IntegrationTest(TestCase):
         self.participant = CompetitionParticipant.objects.create(
             competition=self.competition,
             user=self.user,
-            start_time=timezone.now() - timezone.timedelta(days=1),
-            end_time=timezone.now() + timezone.timedelta(days=1),
+            start_time=timezone.now() - timedelta(days=1),
+            end_time=timezone.now() + timedelta(days=1),
         )
 
     def test_csv_validation_failed(self):
@@ -65,6 +66,7 @@ class IntegrationTest(TestCase):
         submission = Submission.objects.filter(
             user=self.user, competition=self.competition
         ).last()
+        assert submission is not None
         self.assertEqual(submission.status, SubmissionStatus.FAILED)
         self.assertIn("Missing columns", submission.error_message)
 

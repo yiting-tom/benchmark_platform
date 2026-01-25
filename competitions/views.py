@@ -49,8 +49,12 @@ class CompetitionListView(LoginRequiredMixin, View):
             )
 
             # Get upload counts
-            today_count = Submission.get_today_count(p.competition, request.user)
-            total_count = Submission.get_total_count(p.competition, request.user)
+            user = request.user
+            if user.is_anonymous:
+                continue
+
+            today_count = Submission.get_today_count(p.competition, user)  # type: ignore
+            total_count = Submission.get_total_count(p.competition, user)  # type: ignore
 
             competitions.append(
                 {
@@ -97,8 +101,12 @@ class CompetitionDetailView(LoginRequiredMixin, View):
             upload_error = "Competition has ended"
 
         # Check upload limits
-        today_count = Submission.get_today_count(competition, request.user)
-        total_count = Submission.get_total_count(competition, request.user)
+        user = request.user
+        if user.is_anonymous:
+            return HttpResponse("Unauthorized", status=401)
+
+        today_count = Submission.get_today_count(competition, user)  # type: ignore
+        total_count = Submission.get_total_count(competition, user)  # type: ignore
 
         if today_count >= competition.daily_upload_limit:
             can_upload = False
@@ -159,8 +167,8 @@ class CompetitionDetailView(LoginRequiredMixin, View):
             return "id, class, rle_mask"
 
 
-@login_required
-@require_POST
+@login_required  # type: ignore
+@require_POST  # type: ignore
 def upload_prediction(request: HttpRequest, competition_id: int) -> HttpResponse:
     """Handle prediction file upload (HTMX endpoint)."""
     competition = get_object_or_404(Competition, id=competition_id)
@@ -174,8 +182,13 @@ def upload_prediction(request: HttpRequest, competition_id: int) -> HttpResponse
     )
 
     # Check limits
-    today_count = Submission.get_today_count(competition, request.user)
-    total_count = Submission.get_total_count(competition, request.user)
+    # Cast request.user or ensure it's a User object for the method call
+    user = request.user
+    if user.is_anonymous:
+        return HttpResponse("Unauthorized", status=401)
+
+    today_count = Submission.get_today_count(competition, user)  # type: ignore
+    total_count = Submission.get_total_count(competition, user)  # type: ignore
 
     if today_count >= competition.daily_upload_limit:
         return render(
@@ -209,7 +222,8 @@ def upload_prediction(request: HttpRequest, competition_id: int) -> HttpResponse
             {"success": False, "error": "Please select a file"},
         )
 
-    if not prediction_file.name.endswith(".csv"):
+    prediction_file_name: str = prediction_file.name or "unknown.csv"
+    if not prediction_file_name.endswith(".csv"):
         return render(
             request,
             "competitions/partials/upload_result.html",
@@ -294,7 +308,9 @@ def submission_logs(request: HttpRequest, submission_id: int) -> HttpResponse:
     """Get submission logs (HTMX endpoint)."""
     submission = get_object_or_404(Submission, id=submission_id, user=request.user)
 
-    logs = submission.logs.all().order_by("created_at")
+    # submission.logs is a related manager. Casting to Any to satisfy the type checker
+    # if it doesn't recognize the reverse relation.
+    logs = getattr(submission, "logs").all().order_by("created_at")
 
     return render(
         request,
@@ -317,8 +333,8 @@ def submission_history(request: HttpRequest, competition_id: int) -> HttpRespons
     )
 
 
-@login_required
-@require_POST
+@login_required  # type: ignore
+@require_POST  # type: ignore
 def set_final_selection(request: HttpRequest, submission_id: int) -> HttpResponse:
     """Set a submission as the final selection (HTMX endpoint)."""
     submission = get_object_or_404(
@@ -408,7 +424,9 @@ def leaderboard(request: HttpRequest, competition_id: int) -> HttpResponse:
 
     for i, entry in enumerate(leaderboard_data, 1):
         entry["rank"] = i
-        entry["is_current_user"] = entry["user_id"] == request.user.id
+        # Use getattr to satisfy type checker for AnonymousUser/User id
+        current_user_id = getattr(request.user, "id", None)
+        entry["is_current_user"] = entry["user_id"] == current_user_id
 
     return render(
         request,

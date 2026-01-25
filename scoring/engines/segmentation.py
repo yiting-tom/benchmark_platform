@@ -98,7 +98,7 @@ class SegmentationScoringEngine(BaseScoringEngine):
 
     def load_ground_truth(self) -> bool:
         """Load ground truth and auto-detect column names."""
-        if not super().load_ground_truth():
+        if not super().load_ground_truth() or self.ground_truth_df is None:
             return False
 
         columns = list(self.ground_truth_df.columns)
@@ -150,6 +150,11 @@ class SegmentationScoringEngine(BaseScoringEngine):
         self, prediction_df: pd.DataFrame, ground_truth_df: pd.DataFrame
     ) -> ScoringResult:
         """Calculate segmentation mIoU score."""
+        if self.class_col is None or self.id_col is None or self.rle_col is None:
+            return ScoringResult(
+                success=False, error_message="Column names not auto-detected"
+            )
+
         all_classes = set(ground_truth_df[self.class_col].unique())
         self.log(f"Number of classes: {len(all_classes)}")
 

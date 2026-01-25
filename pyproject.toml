@@ -16,3 +16,8 @@ dependencies = [
     "pycocotools>=2.0.11",
     "scikit-learn>=1.8.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ty>=0.0.13",
+]

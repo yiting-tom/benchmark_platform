@@ -95,7 +95,7 @@ class DetectionScoringEngine(BaseScoringEngine):
 
     def load_ground_truth(self) -> bool:
         """Load ground truth and auto-detect column names."""
-        if not super().load_ground_truth():
+        if not super().load_ground_truth() or self.ground_truth_df is None:
             return False
 
         columns = list(self.ground_truth_df.columns)
@@ -170,6 +170,16 @@ class DetectionScoringEngine(BaseScoringEngine):
         iou_threshold: float = 0.5,
     ) -> float:
         """Calculate AP for a single class at a given IoU threshold."""
+        if (
+            self.class_col is None
+            or self.id_col is None
+            or self.xmin_col is None
+            or self.ymin_col is None
+            or self.xmax_col is None
+            or self.ymax_col is None
+        ):
+            return 0.0
+
         class_preds = pred_df[pred_df[self.class_col] == class_label].copy()
         class_gts = gt_df[gt_df[self.class_col] == class_label].copy()
 
@@ -243,6 +253,9 @@ class DetectionScoringEngine(BaseScoringEngine):
         self, prediction_df: pd.DataFrame, ground_truth_df: pd.DataFrame
     ) -> ScoringResult:
         """Calculate detection mAP score."""
+        if self.class_col is None:
+            return ScoringResult(success=False, error_message="Column names not detected")
+
         all_classes = set(ground_truth_df[self.class_col].unique())
         pred_classes = set(prediction_df[self.class_col].unique())
 

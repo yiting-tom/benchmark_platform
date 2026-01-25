@@ -1,7 +1,10 @@
 from django.utils import timezone
+from django_q.tasks import async_task
+from typing import Any, Optional
 
 from competitions.models import (
     Competition,
+    CompetitionStatus,
     Submission,
     SubmissionLog,
     SubmissionStatus,
@@ -9,13 +12,16 @@ from competitions.models import (
     TaskType,
     MetricType,
 )
+from .engines.base import BaseScoringEngine, ScoringResult
 from .engines.classification import ClassificationScoringEngine
 from .engines.detection import DetectionScoringEngine
 from .engines.segmentation import SegmentationScoringEngine
 from .engines.custom import CustomScoringEngine
 
 
-def get_scoring_engine(competition: Competition, ground_truth_path: str = None):
+def get_scoring_engine(
+    competition: Competition, ground_truth_path: Optional[str] = None
+) -> BaseScoringEngine:
     """
     Factory function to get the appropriate scoring engine for a competition.
 
@@ -56,7 +62,7 @@ def add_submission_log(
     SubmissionLog.objects.create(submission=submission, level=level, message=message)
 
 
-def score_submission(submission_id: int) -> dict[str, bool | int | str]:
+def score_submission(submission_id: int) -> dict[str, Any]:
     """
     Score a single submission.
 
@@ -148,7 +154,7 @@ def score_submission(submission_id: int) -> dict[str, bool | int | str]:
         return {"success": False, "submission_id": submission_id, "error": str(e)}
 
 
-def score_private_submissions(competition_id: int) -> dict[str, bool | int | str | list[str]]:
+def score_private_submissions(competition_id: int) -> dict[str, Any]:
     """
     Score all final submissions for a competition using private ground truth.
 
