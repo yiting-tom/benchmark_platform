@@ -79,6 +79,23 @@ class SubmissionStatus(models.TextChoices):
     FAILED = "FAILED", "Failed"
 
 
+class RegistrationWhitelist(models.Model):
+    """Whitelist of usernames allowed to register."""
+
+    username = models.CharField(
+        max_length=150, unique=True, verbose_name="Whitelisted Username"
+    )
+    notes = models.TextField(blank=True, help_text="Optional notes (e.g., real name)")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.username
+
+    class Meta:
+        verbose_name = "Registration Whitelist"
+        verbose_name_plural = "Registration Whitelists"
+
+
 class LogLevel(models.TextChoices):
     """Log severity levels."""
 

@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Max
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.views import View
 from django.views.decorators.http import require_POST
@@ -22,10 +22,11 @@ from django.http import HttpRequest
 from .models import (
     Competition,
     CompetitionParticipant,
-    Submission,
     SubmissionStatus,
     CompetitionStatus,
+    RegistrationWhitelist,
 )
+from .forms import UserRegistrationForm
 
 
 class CompetitionListView(LoginRequiredMixin, View):
@@ -581,3 +582,23 @@ def leaderboard_chart_data(request: HttpRequest, competition_id: int) -> JsonRes
             },
         }
     )
+
+def register(request: HttpRequest) -> HttpResponse:
+    """Handle user registration with whitelist validation."""
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            from django.contrib import messages
+
+            messages.success(
+                request, "Your account has been created! You can now log in."
+            )
+            return redirect("login")
+    else:
+        form = UserRegistrationForm()
+
+    return render(request, "registration/register.html", {"form": form})

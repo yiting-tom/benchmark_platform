@@ -16,6 +16,7 @@ from .models import (
     Submission,
     SubmissionLog,
     Metric,
+    RegistrationWhitelist,
 )
 
 
@@ -232,3 +233,12 @@ class MetricAdmin(admin.ModelAdmin):
 
     list_display = ["name", "id"]
     search_fields = ["name"]
+
+
+@admin.register(RegistrationWhitelist)
+class RegistrationWhitelistAdmin(admin.ModelAdmin):
+    """Admin interface for managing the registration whitelist."""
+
+    list_display = ["username", "notes", "created_at"]
+    search_fields = ["username", "notes"]
+    list_filter = ["created_at"]

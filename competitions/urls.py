@@ -5,8 +5,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Authentication & Profile
+    path("register/", views.register, name="register"),
     # Main pages
-    path("", views.CompetitionListView.as_view(), name="competition_list"),
+    path("", views.CompetitionListView.as_view(), name="dashboard"),
     path(
         "<int:competition_id>/",
         views.CompetitionDetailView.as_view(),

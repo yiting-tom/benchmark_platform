@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Register - CV Competition Platform{% endblock %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-[70vh]">
+    <div class="card w-full max-w-md bg-base-200 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl font-bold mb-6 flex items-center gap-2">
+                <i data-lucide="user-plus" class="text-primary"></i> Register
+            </h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                <div class="form-control w-full">
+                    <label class="label">
+                        <span class="label-text font-semibold">{{ field.label }}</span>
+                    </label>
+                    <input 
+                        type="{{ field.field.widget.input_type|default:'text' }}" 
+                        name="{{ field.name }}"
+                        id="{{ field.id_for_label }}"
+                        class="input input-bordered w-full {% if field.errors %}input-error{% endif %}"
+                        placeholder="Enter {{ field.label|lower }}"
+                        {% if field.value %}value="{{ field.value }}"{% endif %}
+                        {% if field.field.required %}required{% endif %}
+                    >
+                    {% if field.help_text %}
+                    <label class="label">
+                        <span class="label-text-alt text-base-content/60">{{ field.help_text|safe }}</span>
+                    </label>
+                    {% endif %}
+                    {% for error in field.errors %}
+                    <label class="label">
+                        <span class="label-text-alt text-error font-bold">{{ error }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-error shadow-sm py-2">
+                    <div class="flex flex-col items-start gap-1">
+                        {% for error in form.non_field_errors %}
+                        <span class="text-sm font-bold">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card-actions justify-end mt-6">
+                    <button type="submit" class="btn btn-primary w-full shadow-lg">
+                        Create Account
+                    </button>
+                    <div class="w-full text-center mt-4">
+                        <span class="text-base-content/60">Already have an account?</span>
+                        <a href="{% url 'login' %}" class="link link-primary font-bold ml-1">Login here</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
