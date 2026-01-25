@@ -381,84 +381,86 @@ def leaderboard(request: HttpRequest, competition_id: int) -> HttpResponse:
     # For private: use their final selection's private score
     leaderboard_data: List[Dict[str, Any]] = []
 
-    if show_private:
-        # Use final selections only
-        submissions = Submission.objects.filter(
-            competition=competition,
-            is_final_selection=True,
-            private_score__isnull=False,
-        ).select_related("user")
+    # Get all users who have submitted
+    from django.db.models import Max, Q
 
-        for s in submissions:
-            display_scores = []
-            for m_code, _ in metrics_info:
-                if m_code == competition.metric_type:
-                    display_scores.append(s.private_score)
-                else:
-                    display_scores.append((s.private_scores or {}).get(m_code))
+    # Get users with any successful submission
+    users_with_submissions = (
+        Submission.objects.filter(competition=competition, status=SubmissionStatus.SUCCESS)
+        .values_list("user_id", flat=True)
+        .distinct()
+    )
 
-            leaderboard_data.append(
-                {
-                    "user_id": s.user_id,
-                    "username": s.user.username,
-                    "score": s.private_score,
-                    "display_scores": display_scores,
-                    "submission_count": Submission.get_total_count(competition, s.user),
-                    "last_submission": s.submitted_at,
-                }
-            )
-    else:
-        # Use best public score per user
-        from django.db.models import Max
+    leaderboard_data = []
+    for user_id in users_with_submissions:
+        # Get final selection or best public submission
+        final_s = Submission.objects.filter(
+            competition=competition, user_id=user_id, is_final_selection=True
+        ).first()
 
-        user_max_scores = (
+        best_public_s = (
             Submission.objects.filter(
                 competition=competition,
+                user_id=user_id,
                 status=SubmissionStatus.SUCCESS,
                 public_score__isnull=False,
             )
-            .values("user_id")
-            .annotate(max_score=Max("public_score"))
+            .order_by("-public_score", "-submitted_at")
+            .first()
         )
 
-        for entry in user_max_scores:
-            # Get the actual submission object to access the JSON scores
-            s = (
-                Submission.objects.filter(
-                    competition=competition,
-                    user_id=entry["user_id"],
-                    status=SubmissionStatus.SUCCESS,
-                    public_score=entry["max_score"],
-                )
-                .order_by("-submitted_at")
-                .select_related("user")
-                .first()
-            )
+        # Decide which submission to use for which score type
+        # For public scores: always use best_public_s
+        # For private scores: use final_s if it exists and has private_score
+        
+        public_display_scores = []
+        if best_public_s:
+            username = best_public_s.user.username
+            for m_code, _ in metrics_info:
+                if m_code == competition.metric_type:
+                    public_display_scores.append(best_public_s.public_score)
+                else:
+                    public_display_scores.append((best_public_s.scores or {}).get(m_code))
+        else:
+            continue # Should not happen given users_with_submissions filter
 
-            if s:
-                display_scores = []
-                for m_code, _ in metrics_info:
-                    if m_code == competition.metric_type:
-                        display_scores.append(s.public_score)
-                    else:
-                        display_scores.append((s.scores or {}).get(m_code))
+        private_display_scores = []
+        private_score = None
+        if final_s and final_s.private_score is not None:
+            private_score = final_s.private_score
+            for m_code, _ in metrics_info:
+                if m_code == competition.metric_type:
+                    private_display_scores.append(final_s.private_score)
+                else:
+                    private_display_scores.append((final_s.private_scores or {}).get(m_code))
+        else:
+            # Fill with None if no private score available
+            private_display_scores = [None] * len(metrics_info)
 
-                leaderboard_data.append(
-                    {
-                        "user_id": s.user_id,
-                        "username": s.user.username,
-                        "score": s.public_score,
-                        "display_scores": display_scores,
-                        "submission_count": Submission.get_total_count(competition, s.user),
-                        "last_submission": s.submitted_at,
-                    }
-                )
+        leaderboard_data.append(
+            {
+                "user_id": user_id,
+                "username": username,
+                "public_score": best_public_s.public_score,
+                "private_score": private_score,
+                "public_display_scores": public_display_scores,
+                "private_display_scores": private_display_scores,
+                "submission_count": Submission.get_total_count(competition, best_public_s.user),
+                "last_submission": best_public_s.submitted_at,
+            }
+        )
 
-    # Sort leaderboard by score descending
-    leaderboard_data.sort(key=lambda x: x["score"], reverse=True)
+    # Sort leaderboard
+    # If competition ended, sort by private score (fall back to public if private is None)
+    if show_private:
+        leaderboard_data.sort(
+            key=lambda x: (x["private_score"] is not None, x["private_score"] or -1, x["public_score"]),
+            reverse=True,
+        )
+    else:
+        leaderboard_data.sort(key=lambda x: x["public_score"], reverse=True)
 
-    # Sort by score (descending) and add ranks
-    leaderboard_data.sort(key=lambda x: x["score"] or 0, reverse=True)
+    # Sort already performed above based on show_private status
 
     for i, entry in enumerate(leaderboard_data, 1):
         entry["rank"] = i

@@ -29,13 +29,25 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Rank</th>
-                <th>Participant</th>
+                <th rowspan="2" class="align-bottom">Rank</th>
+                <th rowspan="2" class="align-bottom">Participant</th>
+                <th colspan="{{ metrics_info|length }}" class="text-center bg-base-300 rounded-t-lg">Public Scores</th>
+                {% if show_private %}
+                <th colspan="{{ metrics_info|length }}" class="text-center bg-secondary/20 rounded-t-lg">Private Scores
+                </th>
+                {% endif %}
+                <th rowspan="2" class="align-bottom">Submissions</th>
+                <th rowspan="2" class="align-bottom">Last Submission</th>
+            </tr>
+            <tr>
                 {% for _, display_name in metrics_info %}
-                <th>{{ display_name }}</th>
+                <th class="bg-base-300/50">{{ display_name }}</th>
                 {% endfor %}
-                <th>Submissions</th>
-                <th>Last Submission</th>
+                {% if show_private %}
+                {% for _, display_name in metrics_info %}
+                <th class="bg-secondary/10 text-secondary-content">{{ display_name }}</th>
+                {% endfor %}
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -58,13 +70,23 @@
                     <span class="badge badge-sm badge-primary ml-1">Me</span>
                     {% endif %}
                 </td>
-                {% for score in entry.display_scores %}
-                <td>
+                {% for score in entry.public_display_scores %}
+                <td class="bg-base-300/10">
                     <span class="{% if forloop.first %}font-mono text-lg{% else %}font-mono{% endif %}">
                         {{ score|floatformat:4|default:"-" }}
                     </span>
                 </td>
                 {% endfor %}
+                {% if show_private %}
+                {% for score in entry.private_display_scores %}
+                <td class="bg-secondary/5 font-semibold">
+                    <span
+                        class="{% if forloop.first %}font-mono text-lg text-secondary{% else %}font-mono text-secondary/80{% endif %}">
+                        {{ score|floatformat:4|default:"-" }}
+                    </span>
+                </td>
+                {% endfor %}
+                {% endif %}
                 <td>{{ entry.submission_count }}</td>
                 <td>{{ entry.last_submission|date:"m/d H:i" }}</td>
             </tr>
