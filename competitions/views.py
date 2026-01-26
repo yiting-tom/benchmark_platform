@@ -226,7 +226,7 @@ def submission_history(request, competition_id):
     submissions = Submission.objects.filter(
         competition=competition,
         user=request.user
-    ).order_by('-submitted_at')[:50]
+    ).prefetch_related('logs').order_by('-submitted_at')[:50]
     
     return render(request, 'competitions/partials/history.html', {
         'submissions': submissions

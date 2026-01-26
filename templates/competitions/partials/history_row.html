@@ -41,8 +41,46 @@
         {% endif %}
     </td>
     <td>
-        <a href="{{ submission.prediction_file.url }}" class="btn btn-xs btn-ghost" download>
-            <i data-lucide="download" class="w-4 h-4"></i>
-        </a>
+        <div class="flex items-center gap-1">
+            <button class="btn btn-xs btn-ghost" onclick="log_modal_{{ submission.id }}.showModal()" title="View Logs">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+            </button>
+            <a href="{{ submission.prediction_file.url }}" class="btn btn-xs btn-ghost" download
+                title="Download Prediction">
+                <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+        </div>
+
+        <dialog id="log_modal_{{ submission.id }}" class="modal text-left">
+            <div class="modal-box w-11/12 max-w-5xl">
+                <h3 class="font-bold text-lg mb-4">Submission #{{ submission.id }} Logs</h3>
+
+                <div class="overflow-x-auto bg-base-200 p-4 rounded-lg font-mono text-sm max-h-[60vh] overflow-y-auto">
+                    {% for log in submission.logs.all %}
+                    <div class="flex gap-4 border-b border-base-300 last:border-0 py-2">
+                        <span class="text-slate-500 whitespace-nowrap">{{ log.created_at|date:"Y-m-d H:i:s" }}</span>
+                        <span class="font-bold 
+                            {% if log.level == 'ERROR' %}text-error
+                            {% elif log.level == 'WARNING' %}text-warning
+                            {% else %}text-info{% endif %}">
+                            {{ log.level }}
+                        </span>
+                        <span class="whitespace-pre-wrap break-all">{{ log.message }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-slate-500 italic">No logs available</div>
+                    {% endfor %}
+                </div>
+
+                <div class="modal-action">
+                    <form method="dialog">
+                        <button class="btn">Close</button>
+                    </form>
+                </div>
+            </div>
+            <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+            </form>
+        </dialog>
     </td>
 </tr>
