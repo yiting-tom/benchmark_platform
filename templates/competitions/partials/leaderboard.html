@@ -89,104 +89,116 @@
             window.distributionChartInstance.destroy();
         }
 
-        // Fetch chart data
-        fetch('{{ request.path }}chart-data/')
-            .then(response => response.json())
-            .then(data => {
-                // Score Trend Line Chart
-                const trendCtx = document.getElementById('trendChart');
-                if (trendCtx && data.trend.datasets.length > 0) {
-                    window.trendChartInstance = new Chart(trendCtx, {
-                        type: 'line',
-                        data: {
-                            datasets: data.trend.datasets
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                x: {
-                                    type: 'time',
-                                    time: {
-                                        displayFormats: {
-                                            hour: 'MM/dd HH:mm',
-                                            day: 'MM/dd'
+        // Fetch chart data using XMLHttpRequest for compatibility
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '{{ request.path }}chart-data/', true);
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+
+                    // Score Trend Line Chart
+                    var trendCtx = document.getElementById('trendChart');
+                    if (trendCtx && data.trend.datasets.length > 0) {
+                        window.trendChartInstance = new Chart(trendCtx, {
+                            type: 'line',
+                            data: {
+                                datasets: data.trend.datasets
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    x: {
+                                        type: 'time',
+                                        time: {
+                                            displayFormats: {
+                                                hour: 'MM/dd HH:mm',
+                                                day: 'MM/dd'
+                                            }
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Time'
                                         }
                                     },
-                                    title: {
-                                        display: true,
-                                        text: 'Time'
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: 'Score'
+                                        },
+                                        beginAtZero: false
                                     }
                                 },
-                                y: {
-                                    title: {
-                                        display: true,
-                                        text: 'Score'
-                                    },
-                                    beginAtZero: false
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    position: 'bottom'
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    }
                                 }
                             }
-                        }
-                    });
-                } else if (trendCtx) {
-                    trendCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400">No trend data available</div>';
-                }
+                        });
+                    } else if (trendCtx) {
+                        trendCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400">No trend data available</div>';
+                    }
 
-                // Score Distribution Bar Chart
-                const distCtx = document.getElementById('distributionChart');
-                if (distCtx && data.distribution.labels.length > 0) {
-                    window.distributionChartInstance = new Chart(distCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: data.distribution.labels,
-                            datasets: [{
-                                label: 'Participants',
-                                data: data.distribution.data,
-                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                                borderColor: 'rgb(59, 130, 246)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        stepSize: 1
+                    // Score Distribution Bar Chart
+                    var distCtx = document.getElementById('distributionChart');
+                    if (distCtx && data.distribution.labels.length > 0) {
+                        window.distributionChartInstance = new Chart(distCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: data.distribution.labels,
+                                datasets: [{
+                                    label: 'Participants',
+                                    data: data.distribution.data,
+                                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                                    borderColor: 'rgb(59, 130, 246)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            stepSize: 1
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Count'
+                                        }
                                     },
-                                    title: {
-                                        display: true,
-                                        text: 'Count'
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: 'Score Range'
+                                        }
                                     }
                                 },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Score Range'
+                                plugins: {
+                                    legend: {
+                                        display: false
                                     }
                                 }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
                             }
-                        }
-                    });
-                } else if (distCtx) {
-                    distCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400">No distribution data available</div>';
+                        });
+                    } else if (distCtx) {
+                        distCtx.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400">No distribution data available</div>';
+                    }
+                } else {
+                    console.error('Failed to load chart data: ' + xhr.status);
                 }
-            })
-            .catch(err => {
-                console.error('Failed to load chart data:', err);
-            });
+            }
+        };
+
+        xhr.onerror = function () {
+            console.error('Network error loading chart data');
+        };
+
+        xhr.send();
     })();
 </script>
 
