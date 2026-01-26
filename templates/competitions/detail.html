@@ -3,6 +3,86 @@
 
 {% block title %}{{ competition.name }} - VNAP Benchmark Platform{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Manual styling for markdown content since we don't have typography plugin locally */
+    .prose h1 {
+        font-size: 2em;
+        font-weight: bold;
+        margin-top: 1em;
+        margin-bottom: 0.5em;
+    }
+
+    .prose h2 {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin-top: 1em;
+        margin-bottom: 0.5em;
+    }
+
+    .prose h3 {
+        font-size: 1.25em;
+        font-weight: bold;
+        margin-top: 1em;
+        margin-bottom: 0.5em;
+    }
+
+    .prose ul {
+        list-style-type: disc;
+        padding-left: 1.5em;
+        margin-bottom: 1em;
+    }
+
+    .prose ol {
+        list-style-type: decimal;
+        padding-left: 1.5em;
+        margin-bottom: 1em;
+    }
+
+    .prose li {
+        margin-bottom: 0.25em;
+    }
+
+    .prose p {
+        margin-bottom: 1em;
+    }
+
+    .prose a {
+        color: oklch(var(--p));
+        text-decoration: underline;
+    }
+
+    .prose blockquote {
+        border-left: 4px solid oklch(var(--n));
+        padding-left: 1em;
+        font-style: italic;
+        margin-bottom: 1em;
+    }
+
+    .prose code {
+        background-color: oklch(var(--b3));
+        padding: 0.2em 0.4em;
+        border-radius: 0.25em;
+        font-family: monospace;
+    }
+
+    .prose pre {
+        background-color: oklch(var(--n));
+        color: oklch(var(--nc));
+        padding: 1em;
+        border-radius: 0.5em;
+        overflow-x: auto;
+        margin-bottom: 1em;
+    }
+
+    .prose pre code {
+        background-color: transparent;
+        padding: 0;
+        color: inherit;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-8">
     <!-- Breadcrumb -->
