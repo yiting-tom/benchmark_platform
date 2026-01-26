@@ -76,8 +76,7 @@
                                 class="overflow-x-auto bg-base-200 p-4 rounded-lg font-mono text-sm max-h-[60vh] overflow-y-auto">
                                 {% for log in submission.logs.all %}
                                 <div class="flex gap-4 border-b border-base-300 last:border-0 py-2">
-                                    <span class="text-slate-500 whitespace-nowrap">{{ log.created_at|date:"Y-m-d H:i:s"
-                                        }}</span>
+                                    <span class="text-slate-500 whitespace-nowrap">{{ log.created_at|date:"Y-m-d H:i:s" }}</span>
                                     <span class="font-bold 
                                         {% if log.level == 'ERROR' %}text-error
                                         {% elif log.level == 'WARNING' %}text-warning
