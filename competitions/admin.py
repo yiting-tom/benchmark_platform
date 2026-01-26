@@ -15,8 +15,6 @@ from .models import (
     CompetitionParticipant,
     Submission,
     SubmissionLog,
-    Metric,
-    RegistrationWhitelist,
 )
 
 
@@ -45,35 +43,19 @@ class CompetitionAdmin(admin.ModelAdmin):
     list_filter = ["status", "task_type", "metric_type"]
     search_fields = ["name", "description"]
     readonly_fields = ["created_at", "updated_at"]
-    filter_horizontal = ["additional_metrics"]
     inlines = [CompetitionParticipantInline]
 
     fieldsets = (
         (
             "General Information",
-            {
-                "fields": (
-                    "name",
-                    "description",
-                    "task_type",
-                    "metric_type",
-                    "additional_metrics",
-                )
-            },
+            {"fields": ("name", "description", "task_type", "metric_type")},
         ),
         (
             "Data Settings",
-            {
-                "fields": (
-                    "public_ground_truth",
-                    "private_ground_truth",
-                    "scoring_script",
-                    "dataset_url",
-                )
-            },
+            {"fields": ("public_ground_truth", "private_ground_truth", "dataset_url")},
         ),
         ("Upload Limits", {"fields": ("daily_upload_limit", "total_upload_limit")}),
-        ("Status", {"fields": ("status", "private_scoring_completed")}),
+        ("Status", {"fields": ("status",)}),
         (
             "Timestamps",
             {"fields": ("created_at", "updated_at"), "classes": ("collapse",)},
@@ -162,8 +144,6 @@ class SubmissionAdmin(admin.ModelAdmin):
         "prediction_file",
         "status",
         "public_score",
-        "scores",
-        "private_scores",
         "error_message",
         "submitted_at",
         "scored_at",
@@ -177,16 +157,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         ),
         (
             "Scoring Results",
-            {
-                "fields": (
-                    "status",
-                    "public_score",
-                    "private_score",
-                    "scores",
-                    "private_scores",
-                    "scored_at",
-                )
-            },
+            {"fields": ("status", "public_score", "private_score", "scored_at")},
         ),
         ("Final Selection", {"fields": ("is_final_selection",)}),
         ("Error Message", {"fields": ("error_message",), "classes": ("collapse",)}),
@@ -226,19 +197,3 @@ class SubmissionLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
-
-@admin.register(Metric)
-class MetricAdmin(admin.ModelAdmin):
-    """Admin interface for managing available metrics."""
-
-    list_display = ["name", "id"]
-    search_fields = ["name"]
-
-
-@admin.register(RegistrationWhitelist)
-class RegistrationWhitelistAdmin(admin.ModelAdmin):
-    """Admin interface for managing the registration whitelist."""
-
-    list_display = ["username", "notes", "created_at"]
-    search_fields = ["username", "notes"]
-    list_filter = ["created_at"]

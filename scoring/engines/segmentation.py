@@ -10,7 +10,6 @@ Prediction must match: [id_col], [class_col], [rle_mask_col]
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from collections import defaultdict
 
 from .base import BaseScoringEngine, ScoringResult
@@ -83,22 +82,22 @@ class SegmentationScoringEngine(BaseScoringEngine):
     Column names are auto-detected from the Ground Truth file.
     """
 
-    REQUIRED_COLUMNS: list[str] = []  # Set dynamically
+    REQUIRED_COLUMNS = []  # Set dynamically
 
-    def __init__(self, ground_truth_path: str | Path, metric_type: str = "MIOU"):
+    def __init__(self, ground_truth_path, metric_type: str = "MIOU"):
         super().__init__(ground_truth_path)
-        self.metric_type: str = metric_type
-        self.image_dimensions: dict[str, tuple[int, int]] = {}
+        self.metric_type = metric_type
+        self.image_dimensions = {}
         # Column names (auto-detected)
-        self.id_col: str | None = None
-        self.class_col: str | None = None
-        self.rle_col: str | None = None
-        self.height_col: str | None = None
-        self.width_col: str | None = None
+        self.id_col = None
+        self.class_col = None
+        self.rle_col = None
+        self.height_col = None
+        self.width_col = None
 
     def load_ground_truth(self) -> bool:
         """Load ground truth and auto-detect column names."""
-        if not super().load_ground_truth() or self.ground_truth_df is None:
+        if not super().load_ground_truth():
             return False
 
         columns = list(self.ground_truth_df.columns)
@@ -150,11 +149,6 @@ class SegmentationScoringEngine(BaseScoringEngine):
         self, prediction_df: pd.DataFrame, ground_truth_df: pd.DataFrame
     ) -> ScoringResult:
         """Calculate segmentation mIoU score."""
-        if self.class_col is None or self.id_col is None or self.rle_col is None:
-            return ScoringResult(
-                success=False, error_message="Column names not auto-detected"
-            )
-
         all_classes = set(ground_truth_df[self.class_col].unique())
         self.log(f"Number of classes: {len(all_classes)}")
 

@@ -10,7 +10,6 @@ Prediction must add: confidence column
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from collections import defaultdict
 
 from .base import BaseScoringEngine, ScoringResult
@@ -80,22 +79,22 @@ class DetectionScoringEngine(BaseScoringEngine):
     Column names are auto-detected from the Ground Truth file.
     """
 
-    REQUIRED_COLUMNS: list[str] = []  # Set dynamically
+    REQUIRED_COLUMNS = []  # Set dynamically
 
-    def __init__(self, ground_truth_path: str | Path, metric_type: str = "MAP"):
+    def __init__(self, ground_truth_path, metric_type: str = "MAP"):
         super().__init__(ground_truth_path)
-        self.metric_type: str = metric_type
+        self.metric_type = metric_type
         # Column names (auto-detected)
-        self.id_col: str | None = None
-        self.class_col: str | None = None
-        self.xmin_col: str | None = None
-        self.ymin_col: str | None = None
-        self.xmax_col: str | None = None
-        self.ymax_col: str | None = None
+        self.id_col = None
+        self.class_col = None
+        self.xmin_col = None
+        self.ymin_col = None
+        self.xmax_col = None
+        self.ymax_col = None
 
     def load_ground_truth(self) -> bool:
         """Load ground truth and auto-detect column names."""
-        if not super().load_ground_truth() or self.ground_truth_df is None:
+        if not super().load_ground_truth():
             return False
 
         columns = list(self.ground_truth_df.columns)
@@ -170,16 +169,6 @@ class DetectionScoringEngine(BaseScoringEngine):
         iou_threshold: float = 0.5,
     ) -> float:
         """Calculate AP for a single class at a given IoU threshold."""
-        if (
-            self.class_col is None
-            or self.id_col is None
-            or self.xmin_col is None
-            or self.ymin_col is None
-            or self.xmax_col is None
-            or self.ymax_col is None
-        ):
-            return 0.0
-
         class_preds = pred_df[pred_df[self.class_col] == class_label].copy()
         class_gts = gt_df[gt_df[self.class_col] == class_label].copy()
 
@@ -253,9 +242,6 @@ class DetectionScoringEngine(BaseScoringEngine):
         self, prediction_df: pd.DataFrame, ground_truth_df: pd.DataFrame
     ) -> ScoringResult:
         """Calculate detection mAP score."""
-        if self.class_col is None:
-            return ScoringResult(success=False, error_message="Column names not detected")
-
         all_classes = set(ground_truth_df[self.class_col].unique())
         pred_classes = set(prediction_df[self.class_col].unique())
 

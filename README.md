@@ -55,13 +55,11 @@ docker-compose exec web python manage.py createsuperuser
 - Create competitions in Django Admin
 - Set task types (Classification/Detection/Segmentation)
 - Upload Ground Truth
-- **Custom Scoring Scripts**: Upload Python scripts for complex scoring logic.
 - Manage participant whitelist and specific time windows
 
 ### Participant
 - Real-time countdown for remaining time
 - Automatic scoring after prediction file upload
-- **Detailed Logs**: View scoring logs and error messages in a modal.
 - View submission history and Public Score
 - Select final submission version
 
@@ -73,24 +71,9 @@ docker-compose exec web python manage.py createsuperuser
 
 | Task Type | Metric |
 |-----------|--------|
-| Classification | Accuracy (Micro/Macro), F1-Score (Micro/Macro), Precision (Micro/Macro), Recall (Micro/Macro) |
-| Detection | mAP@0.5, mAP@0.75, mAP@[0.5:0.95], Precision, Recall |
+| Classification | Accuracy, F1-Score |
+| Detection | mAP@0.5, mAP@[0.5:0.95] |
 | Segmentation | mIoU |
-| **All Tasks** | **Custom Script** (via Python upload) |
 
-## �️ Development Tools
-
-To maintain high code quality and type safety, the following tools are used:
-
-- **Linting & Formatting**: [Ruff](https://docs.astral.sh/ruff/)
-  ```bash
-  uv run ruff check .
-  uv run ruff format .
-  ```
-- **Type Checking**: [ty](https://docs.astral.sh/ty/)
-  ```bash
-  uv run ty check
-  ```
-
-## �📝 CSV Format
-(Details of CSV format)
+## 📝 CSV Format
+(Details of CSV format remain unchanged)

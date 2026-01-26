@@ -9,15 +9,7 @@ Example: filename, label OR image_id, label
 """
 
 import pandas as pd
-from pathlib import Path
-from sklearn.metrics import (
-    accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    balanced_accuracy_score,
-    classification_report,
-)
+from sklearn.metrics import accuracy_score, f1_score, classification_report
 
 from .base import BaseScoringEngine, ScoringResult
 
@@ -33,9 +25,9 @@ class ClassificationScoringEngine(BaseScoringEngine):
     Column names are auto-detected from the Ground Truth file.
     """
 
-    REQUIRED_COLUMNS: list[str] = []  # Will be set dynamically from ground truth
+    REQUIRED_COLUMNS = []  # Will be set dynamically from ground truth
 
-    def __init__(self, ground_truth_path: str | Path, metric_type: str = "ACCURACY"):
+    def __init__(self, ground_truth_path, metric_type: str = "ACCURACY"):
         """
         Initialize the classification scorer.
 
@@ -44,13 +36,13 @@ class ClassificationScoringEngine(BaseScoringEngine):
             metric_type: Either "ACCURACY" or "F1".
         """
         super().__init__(ground_truth_path)
-        self.metric_type: str = metric_type
-        self.id_column: str | None = None
-        self.label_column: str | None = None
+        self.metric_type = metric_type
+        self.id_column = None
+        self.label_column = None
 
     def load_ground_truth(self) -> bool:
         """Load ground truth and auto-detect column names."""
-        if not super().load_ground_truth() or self.ground_truth_df is None:
+        if not super().load_ground_truth():
             return False
 
         # Auto-detect columns from ground truth
@@ -105,11 +97,6 @@ class ClassificationScoringEngine(BaseScoringEngine):
         Returns:
             ScoringResult with accuracy/F1 and per-class metrics.
         """
-        if self.id_column is None or self.label_column is None:
-            return ScoringResult(
-                success=False, error_message="Column names not auto-detected"
-            )
-
         # Merge on ID column to align predictions with ground truth
         merged = pd.merge(
             ground_truth_df,
@@ -133,45 +120,17 @@ class ClassificationScoringEngine(BaseScoringEngine):
         y_pred = merged[label_pred_col]
 
         # Calculate metrics
-        metrics_dict = {
-            "accuracy": accuracy_score(y_true, y_pred),
-            "accuracy_macro": balanced_accuracy_score(y_true, y_pred),
-            "f1_macro": f1_score(y_true, y_pred, average="macro", zero_division=0),
-            "f1_micro": f1_score(y_true, y_pred, average="micro", zero_division=0),
-            "precision_macro": precision_score(
-                y_true, y_pred, average="macro", zero_division=0
-            ),
-            "precision_micro": precision_score(
-                y_true, y_pred, average="micro", zero_division=0
-            ),
-            "recall_macro": recall_score(
-                y_true, y_pred, average="macro", zero_division=0
-            ),
-            "recall_micro": recall_score(
-                y_true, y_pred, average="micro", zero_division=0
-            ),
-        }
+        accuracy = accuracy_score(y_true, y_pred)
+        f1_macro = f1_score(y_true, y_pred, average="macro", zero_division=0)
 
-        # Log main metrics
-        self.log(f"Accuracy: {metrics_dict['accuracy']:.4f}")
-        self.log(f"F1 (macro): {metrics_dict['f1_macro']:.4f}")
+        self.log(f"Accuracy: {accuracy:.4f}")
+        self.log(f"F1 (macro): {f1_macro:.4f}")
 
-        # Map metric_type to primary score
-        score_map = {
-            "ACCURACY": metrics_dict["accuracy"],
-            "ACCURACY_MICRO": metrics_dict["accuracy"],
-            "ACCURACY_MACRO": metrics_dict["accuracy_macro"],
-            "F1": metrics_dict["f1_macro"],
-            "F1_MACRO": metrics_dict["f1_macro"],
-            "F1_MICRO": metrics_dict["f1_micro"],
-            "PRECISION": metrics_dict["precision_macro"],
-            "PRECISION_MACRO": metrics_dict["precision_macro"],
-            "PRECISION_MICRO": metrics_dict["precision_micro"],
-            "RECALL": metrics_dict["recall_macro"],
-            "RECALL_MACRO": metrics_dict["recall_macro"],
-            "RECALL_MICRO": metrics_dict["recall_micro"],
-        }
-        primary_score = score_map.get(self.metric_type, metrics_dict["accuracy"])
+        # Determine primary score based on metric_type
+        if self.metric_type == "F1":
+            primary_score = f1_macro
+        else:
+            primary_score = accuracy
 
         # Generate per-class report
         try:
@@ -183,9 +142,10 @@ class ClassificationScoringEngine(BaseScoringEngine):
 
         return ScoringResult(
             success=True,
-            score=round(float(primary_score), 6),
+            score=round(primary_score, 6),
             metrics={
-                **{k: round(float(v), 6) for k, v in metrics_dict.items()},
+                "accuracy": round(accuracy, 6),
+                "f1_macro": round(f1_macro, 6),
                 "total_samples": len(merged),
                 "missing_predictions": int(missing_count),
                 "per_class_report": report,

@@ -19,7 +19,7 @@ class ScoringResult:
 
     success: bool
     score: float | None = None
-    metrics: dict[str, float | int | str | dict[str, Any]] | None = (
+    metrics: dict[str, Any] | None = (
         None  # Additional metrics (e.g., per-class accuracy)
     )
     error_message: str | None = None
@@ -156,12 +156,6 @@ class BaseScoringEngine(ABC):
 
         # Calculate score
         try:
-            if self.ground_truth_df is None:
-                return ScoringResult(
-                    success=False,
-                    error_message="Ground truth not loaded",
-                    logs=self.logs,
-                )
             result = self.calculate_score(prediction_df, self.ground_truth_df)
             result.logs = self.logs + (result.logs or [])
             return result

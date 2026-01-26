@@ -50,7 +50,7 @@ def test_detection():
     print(f"Metrics: {result.metrics}")
 
     assert result.success, "Detection scoring should succeed"
-    assert result.score is not None and result.score > 0, "mAP should be positive"
+    assert result.score > 0, "mAP should be positive"
     print("✅ Detection test passed!")
 
 
@@ -88,11 +88,10 @@ def test_segmentation():
 
     print(f"Success: {result.success}")
     print(f"Score (mIoU): {result.score}")
-    if result.metrics:
-        print(f"Per-class IoU: {result.metrics.get('per_class_iou', {})}")
+    print(f"Per-class IoU: {result.metrics.get('per_class_iou', {})}")
 
     assert result.success, "Segmentation scoring should succeed"
-    assert result.score is not None and result.score > 0, "mIoU should be positive"
+    assert result.score > 0, "mIoU should be positive"
     print("✅ Segmentation test passed!")
 
 

@@ -41,20 +41,8 @@
         {% endif %}
     </td>
     <td>
-        <div class="flex gap-1">
-            <a href="{{ submission.prediction_file.url }}" class="btn btn-xs btn-ghost" download>
-                <i data-lucide="download" class="w-4 h-4"></i>
-            </a>
-            {% if submission.status == 'SUCCESS' %}
-            <button class="btn btn-xs btn-ghost text-primary" hx-get="{% url 'submission_report' submission.id %}"
-                hx-target="#modal_content" hx-on::after-request="global_modal.showModal()">
-                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-            </button>
-            {% endif %}
-            <button class="btn btn-xs btn-ghost" hx-get="{% url 'submission_logs' submission.id %}"
-                hx-target="#modal_content" hx-on::after-request="global_modal.showModal()">
-                <i data-lucide="terminal" class="w-4 h-4"></i>
-            </button>
-        </div>
+        <a href="{{ submission.prediction_file.url }}" class="btn btn-xs btn-ghost" download>
+            <i data-lucide="download" class="w-4 h-4"></i>
+        </a>
     </td>
 </tr>
