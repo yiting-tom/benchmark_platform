@@ -39,6 +39,28 @@
         margin-bottom: 1em;
     }
 
+    .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1em;
+    }
+
+    .prose th,
+    .prose td {
+        border: 1px solid oklch(var(--b3));
+        padding: 0.5em;
+        text-align: left;
+    }
+
+    .prose th {
+        background-color: oklch(var(--b2));
+        font-weight: bold;
+    }
+
+    .prose tr:nth-child(even) {
+        background-color: oklch(var(--b2) / 0.5);
+    }
+
     .prose li {
         margin-bottom: 0.25em;
     }
