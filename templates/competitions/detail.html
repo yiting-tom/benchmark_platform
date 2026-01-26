@@ -176,9 +176,16 @@
     // Tab switching
     function showTab(tabName) {
         // Hide all content
-        document.querySelectorAll('.panel-content').forEach(el => el.classList.add('hidden'));
+        var contents = document.querySelectorAll('.panel-content');
+        for (var i = 0; i < contents.length; i++) {
+            contents[i].classList.add('hidden');
+        }
+
         // Remove active from all tabs
-        document.querySelectorAll('[role="tab"]').forEach(el => el.classList.remove('tab-active'));
+        var tabs = document.querySelectorAll('[role="tab"]');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].classList.remove('tab-active');
+        }
 
         // Show selected content
         document.getElementById('content-' + tabName).classList.remove('hidden');
@@ -186,27 +193,32 @@
     }
 
     // Countdown timer
-    const endTime = new Date("{{ participant.end_time|date:'c' }}");
-    const countdownEl = document.getElementById('main-countdown');
+    var endTime = new Date("{{ participant.end_time|date:'c' }}");
+    var countdownEl = document.getElementById('main-countdown');
+
+    function padZero(num) {
+        var s = String(num);
+        return s.length < 2 ? '0' + s : s;
+    }
 
     function updateCountdown() {
-        const now = new Date();
-        const diff = endTime - now;
+        var now = new Date();
+        var diff = endTime - now;
 
         if (diff <= 0) {
             countdownEl.textContent = 'Ended';
             return;
         }
 
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
         if (days > 0) {
-            countdownEl.textContent = `${days}d ${hours}h ${minutes}m`;
+            countdownEl.textContent = days + 'd ' + hours + 'h ' + minutes + 'm';
         } else {
-            countdownEl.textContent = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            countdownEl.textContent = hours + ':' + padZero(minutes) + ':' + padZero(seconds);
         }
     }
 

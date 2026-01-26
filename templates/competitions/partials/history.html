@@ -57,7 +57,8 @@
                 </td>
                 <td>
                     <div class="flex items-center gap-1">
-                        <button class="btn btn-xs btn-ghost" onclick="log_modal_{{ submission.id }}.showModal()"
+                        <button class="btn btn-xs btn-ghost"
+                            onclick="document.getElementById('log_modal_{{ submission.id }}').showModal()"
                             title="View Logs">
                             <i data-lucide="file-text" class="w-4 h-4"></i>
                         </button>
