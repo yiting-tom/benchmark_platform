@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" data-theme="night">
 
@@ -6,16 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CV Competition Platform{% endblock %}</title>
 
-    <!-- Tailwind CSS + DaisyUI via CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS + DaisyUI via Local Static -->
+    <link href="{% static 'vendor/css/daisyui.full.min.css' %}" rel="stylesheet" type="text/css" />
+    <script src="{% static 'vendor/js/tailwindcss.js' %}"></script>
 
     <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="{% static 'vendor/js/htmx.min.js' %}"></script>
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="{% static 'vendor/js/chart.js' %}"></script>
+    <script src="{% static 'vendor/js/chartjs-adapter-date-fns.js' %}"></script>
 
     <!-- Custom styles -->
     <style>
@@ -47,7 +48,7 @@
     </style>
 
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="{% static 'vendor/js/lucide.min.js' %}"></script>
 
     {% block extra_head %}{% endblock %}
 </head>
