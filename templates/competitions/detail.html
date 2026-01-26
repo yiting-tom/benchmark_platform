@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load markdown_extras %}
+{% load markdownify %}
 
 {% block title %}{{ competition.name }} - VNAP Benchmark Platform{% endblock %}
 
@@ -133,7 +133,7 @@
 
             {% if competition.description %}
             <div class="prose max-w-none bg-base-100 p-6 rounded-box shadow">
-                {{ competition.description|markdown }}
+                {{ competition.description|markdownify }}
             </div>
             {% endif %}
 

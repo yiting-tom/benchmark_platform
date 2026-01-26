@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # Local apps
     "competitions",
     "scoring",
+    "markdownify",
 ]
 
 MIDDLEWARE = [
@@ -156,3 +157,27 @@ Q_CLUSTER = {
 LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
+
+# Markdownify Configuration
+MARKDOWNIFY = {
+    "default": {
+        "BLEACH": True,
+        "MARKDOWN_EXTENSIONS": [
+            "markdown.extensions.fenced_code",
+            "markdown.extensions.extra",
+            "markdown.extensions.codehilite",
+        ],
+        "STRIP": False,
+        "WHITELIST_TAGS": [
+            "a", "abbr", "acronym", "b", "blockquote", "code", "em", "i", "li", "ol", "p", "strong", "ul",
+            "h1", "h2", "h3", "h4", "h5", "h6", "pre", "table", "thead", "tbody", "tr", "th", "td",
+            "br", "hr", "img", "span", "div"
+        ],
+        "WHITELIST_ATTRS": [
+            "href", "src", "alt", "class", "title", "id"
+        ],
+        "WHITELIST_STYLES": [
+            "color", "font-weight", "font-style"
+        ]
+    }
+}
