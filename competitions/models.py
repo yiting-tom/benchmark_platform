@@ -18,6 +18,7 @@ class TaskType(models.TextChoices):
     CLASSIFICATION = 'CLASSIFICATION', 'Image Classification'
     DETECTION = 'DETECTION', 'Object Detection'
     SEGMENTATION = 'SEGMENTATION', 'Image Segmentation'
+    CUSTOM = 'CUSTOM', 'Custom Script'
 
 
 class MetricType(models.TextChoices):
@@ -61,6 +62,11 @@ def submission_prediction_path(instance, filename):
     return f'submissions/{instance.competition_id}/{instance.user_id}/{filename}'
 
 
+def competition_scoring_script_path(instance, filename):
+    """Generate upload path for scoring scripts."""
+    return f'competitions/{instance.id}/scripts/{filename}'
+
+
 class Competition(models.Model):
     """
     A CV competition created by an admin.
@@ -98,6 +104,14 @@ class Competition(models.Model):
         upload_to=competition_ground_truth_path,
         verbose_name='Private Ground Truth',
         help_text='CSV format, only visible to Validators',
+        blank=True,
+        null=True
+    )
+    
+    scoring_script = models.FileField(
+        upload_to=competition_scoring_script_path,
+        verbose_name='Scoring Script',
+        help_text='Python script for custom scoring. Must implement calculate_score().',
         blank=True,
         null=True
     )
