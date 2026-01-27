@@ -125,6 +125,13 @@ class Competition(models.Model):
         default=CompetitionStatus.DRAFT,
         verbose_name='Status'
     )
+
+    available_metrics = models.JSONField(
+        default=list,
+        verbose_name='Available Metrics',
+        help_text='Select all metrics to be displayed on the leaderboard',
+        blank=True
+    )
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created At')
@@ -252,6 +259,13 @@ class Submission(models.Model):
         blank=True,
         verbose_name='Error Message'
     )
+
+    all_scores = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name='All Scores',
+        help_text='JSON containing all calculated metrics'
+    )
     
     # Timestamps
     submitted_at = models.DateTimeField(auto_now_add=True, verbose_name='Submitted At')
@@ -331,3 +345,26 @@ class SubmissionLog(models.Model):
 
     def __str__(self):
         return f'[{self.level}] {self.message[:50]}'
+
+
+class RegistrationWhitelist(models.Model):
+    """
+    Whitelist of usernames allowed to register on the platform.
+    """
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        verbose_name='Whitelisted Username'
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text='Optional notes (e.g., real name)'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Registration Whitelist'
+        verbose_name_plural = 'Registration Whitelists'
+
+    def __str__(self):
+        return self.username

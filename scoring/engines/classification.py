@@ -144,8 +144,8 @@ class ClassificationScoringEngine(BaseScoringEngine):
             success=True,
             score=round(primary_score, 6),
             metrics={
-                "accuracy": round(accuracy, 6),
-                "f1_macro": round(f1_macro, 6),
+                "ACCURACY": round(accuracy, 6),
+                "F1": round(f1_macro, 6),
                 "total_samples": len(merged),
                 "missing_predictions": int(missing_count),
                 "per_class_report": report,

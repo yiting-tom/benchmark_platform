@@ -31,7 +31,10 @@
             <tr>
                 <th>Rank</th>
                 <th>Participant</th>
-                <th>Score</th>
+                {% for metric in available_metrics %}
+                <th>{{ metric.label }}</th>
+                {% endfor %}
+                <th class="{% if available_metrics %}text-slate-400 font-normal{% endif %}">Primary Score</th>
                 <th>Submissions</th>
                 <th>Last Submission</th>
             </tr>
@@ -56,8 +59,18 @@
                     <span class="badge badge-sm badge-primary ml-1">Me</span>
                     {% endif %}
                 </td>
+                {% for val in entry.display_scores %}
                 <td>
-                    <span class="font-mono text-lg">{{ entry.score|floatformat:4 }}</span>
+                    <span class="font-mono text-lg">
+                        {% if val is not None %}{{ val|floatformat:4 }}{% else %}-{% endif %}
+                    </span>
+                </td>
+                {% endfor %}
+                <td class="{% if available_metrics %}bg-base-200/30{% endif %}">
+                    <span
+                        class="font-mono text-sm {% if not available_metrics %}text-lg{% else %}text-slate-500{% endif %}">
+                        {{ entry.score|floatformat:4 }}
+                    </span>
                 </td>
                 <td>{{ entry.submission_count }}</td>
                 <td>{{ entry.last_submission|date:"m/d H:i" }}</td>

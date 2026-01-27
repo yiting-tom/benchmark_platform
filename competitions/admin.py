@@ -7,6 +7,7 @@ Provides admin interfaces for:
 - Submission review (for validators)
 """
 
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 
@@ -15,6 +16,7 @@ from .models import (
     CompetitionParticipant,
     Submission,
     SubmissionLog,
+    MetricType,
 )
 
 
@@ -27,9 +29,26 @@ class CompetitionParticipantInline(admin.TabularInline):
     fields = ["user", "start_time", "end_time", "is_active"]
 
 
+class CompetitionAdminForm(forms.ModelForm):
+    """Custom form for CompetitionAdmin to handle available_metrics as a list of choices."""
+
+    available_metrics = forms.MultipleChoiceField(
+        choices=MetricType.choices,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        help_text="Select all metrics to be displayed on the leaderboard",
+    )
+
+    class Meta:
+        model = Competition
+        fields = "__all__"
+
+
 @admin.register(Competition)
 class CompetitionAdmin(admin.ModelAdmin):
     """Admin interface for competition management."""
+
+    form = CompetitionAdminForm
 
     list_display = [
         "name",
@@ -48,7 +67,7 @@ class CompetitionAdmin(admin.ModelAdmin):
     fieldsets = (
         (
             "General Information",
-            {"fields": ("name", "description", "task_type", "metric_type")},
+            {"fields": ("name", "description", "task_type", "metric_type", "available_metrics")},
         ),
         (
             "Data Settings",
@@ -145,6 +164,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         "status",
         "public_score",
         "error_message",
+        "all_scores",
         "submitted_at",
         "scored_at",
     ]
@@ -157,7 +177,7 @@ class SubmissionAdmin(admin.ModelAdmin):
         ),
         (
             "Scoring Results",
-            {"fields": ("status", "public_score", "private_score", "scored_at")},
+            {"fields": ("status", "public_score", "private_score", "all_scores", "scored_at")},
         ),
         ("Final Selection", {"fields": ("is_final_selection",)}),
         ("Error Message", {"fields": ("error_message",), "classes": ("collapse",)}),

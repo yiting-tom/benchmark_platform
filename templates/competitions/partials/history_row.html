@@ -1,4 +1,5 @@
 <!-- Single row for HTMX swap after setting final selection -->
+{% load competition_extras %}
 <tr class="{% if submission.is_final_selection %}bg-primary/10{% endif %}">
     <td>{{ submission.id }}</td>
     <td>{{ submission.submitted_at|date:"Y-m-d H:i" }}</td>
@@ -19,8 +20,24 @@
         {% endif %}
     </td>
     <td>
+        {% if submission.status == 'SUCCESS' %}
+        {% for metric in available_metrics %}
+        <span class="font-mono font-bold">
+            {% with val=submission.all_scores|dict_get:metric.key %}
+            {% if val is not None %}{{ val|floatformat:4 }}{% else %}-{% endif %}
+            {% endwith %}
+        </span>
+        {% if not forloop.last %}<br>{% endif %}
+        {% endfor %}
+        {% else %}
+        <span class="text-slate-400">-</span>
+        {% endif %}
+    </td>
+    <td class="{% if available_metrics %}bg-base-200/30{% endif %}">
         {% if submission.public_score is not None %}
-        <span class="font-mono font-bold">{{ submission.public_score|floatformat:4 }}</span>
+        <span class="font-mono {% if not available_metrics %}font-bold{% else %}text-slate-500 text-xs{% endif %}">
+            {{ submission.public_score|floatformat:4 }}
+        </span>
         {% else %}
         <span class="text-slate-400">-</span>
         {% endif %}

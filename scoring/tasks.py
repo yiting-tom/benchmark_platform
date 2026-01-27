@@ -82,20 +82,28 @@ def score_submission(submission_id: int) -> dict:
         
         # Save logs from engine
         for log_msg in (result.logs or []):
-            # Parse log level from message format "[LEVEL] message"
+            # Parse log level and strip prefix
             if log_msg.startswith("[ERROR]"):
                 level = LogLevel.ERROR
+                message = log_msg.replace("[ERROR] ", "", 1)
             elif log_msg.startswith("[WARNING]"):
                 level = LogLevel.WARNING
+                message = log_msg.replace("[WARNING] ", "", 1)
+            elif log_msg.startswith("[INFO]"):
+                level = LogLevel.INFO
+                message = log_msg.replace("[INFO] ", "", 1)
             else:
                 level = LogLevel.INFO
-            add_submission_log(submission, log_msg, level)
+                message = log_msg
+            
+            add_submission_log(submission, message, level)
         
         if result.success:
             submission.status = SubmissionStatus.SUCCESS
             submission.public_score = result.score
+            submission.all_scores = result.metrics
             submission.scored_at = timezone.now()
-            submission.save(update_fields=["status", "public_score", "scored_at"])
+            submission.save(update_fields=["status", "public_score", "all_scores", "scored_at"])
             
             add_submission_log(
                 submission, 

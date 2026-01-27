@@ -195,7 +195,7 @@ class SegmentationScoringEngine(BaseScoringEngine):
             success=True,
             score=round(mIoU, 6),
             metrics={
-                "mIoU": round(mIoU, 6),
+                "MIOU": round(mIoU, 6),
                 "per_class_iou": class_ious_rounded,
                 "num_classes": len(all_classes),
                 "num_gt_masks": len(ground_truth_df),

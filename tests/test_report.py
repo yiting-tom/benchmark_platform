@@ -18,7 +18,7 @@ class ReportTest(TestCase):
             competition=self.competition,
             user=self.user,
             status=SubmissionStatus.SUCCESS,
-            scores={
+            all_scores={
                 "per_class_report": {
                     "cat": {"precision": 0.9, "recall": 0.8, "f1-score": 0.85, "support": 10},
                     "dog": {"precision": 0.7, "recall": 0.75, "f1-score": 0.72, "support": 10},

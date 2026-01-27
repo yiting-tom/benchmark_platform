@@ -121,9 +121,13 @@
         <div class="flex-1">
             <h1 class="text-3xl font-bold mb-4">{{ competition.name }}</h1>
 
-            <div class="flex gap-2 mb-4">
+            <div class="flex flex-wrap gap-2 mb-4">
                 <span class="badge badge-primary">{{ competition.get_task_type_display }}</span>
+                {% for metric in competition.available_metrics %}
+                <span class="badge badge-secondary">{{ metric }}</span>
+                {% empty %}
                 <span class="badge badge-secondary">{{ competition.get_metric_type_display }}</span>
+                {% endfor %}
                 {% if competition.status == 'ACTIVE' %}
                 <span class="badge badge-success">Active</span>
                 {% else %}

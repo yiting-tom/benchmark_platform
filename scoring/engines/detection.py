@@ -241,59 +241,55 @@ class DetectionScoringEngine(BaseScoringEngine):
     def calculate_score(
         self, prediction_df: pd.DataFrame, ground_truth_df: pd.DataFrame
     ) -> ScoringResult:
-        """Calculate detection mAP score."""
+        """Calculate detection mAP scores."""
         all_classes = set(ground_truth_df[self.class_col].unique())
         pred_classes = set(prediction_df[self.class_col].unique())
 
         self.log(f"GT classes: {len(all_classes)}, Pred classes: {len(pred_classes)}")
 
-        if self.metric_type == "MAP_50_95":
-            iou_thresholds = np.arange(0.5, 1.0, 0.05)
-            all_aps = []
-
-            for iou_thresh in iou_thresholds:
-                class_aps = []
-                for class_label in all_classes:
-                    ap = self._calculate_ap_per_class(
-                        prediction_df, ground_truth_df, class_label, iou_thresh
-                    )
-                    class_aps.append(ap)
-                all_aps.append(np.mean(class_aps) if class_aps else 0.0)
-
-            mAP = np.mean(all_aps)
-            self.log(f"mAP@[0.5:0.95]: {mAP:.4f}")
-
-            return ScoringResult(
-                success=True,
-                score=round(mAP, 6),
-                metrics={
-                    "mAP_50_95": round(mAP, 6),
-                    "num_classes": len(all_classes),
-                    "num_predictions": len(prediction_df),
-                    "num_ground_truth": len(ground_truth_df),
-                },
-                logs=self.logs,
+        # Calculate mAP@0.5
+        class_aps_50 = {}
+        for class_label in all_classes:
+            ap = self._calculate_ap_per_class(
+                prediction_df, ground_truth_df, class_label, iou_threshold=0.5
             )
-        else:
-            class_aps = {}
+            class_aps_50[class_label] = round(ap, 4)
+
+        mAP_50 = np.mean(list(class_aps_50.values())) if class_aps_50 else 0.0
+        self.log(f"mAP@0.5: {mAP_50:.4f}")
+
+        # Calculate mAP@[0.5:0.95]
+        iou_thresholds = np.arange(0.5, 1.0, 0.05)
+        all_aps_50_95 = []
+
+        for iou_thresh in iou_thresholds:
+            class_aps = []
             for class_label in all_classes:
                 ap = self._calculate_ap_per_class(
-                    prediction_df, ground_truth_df, class_label, iou_threshold=0.5
+                    prediction_df, ground_truth_df, class_label, iou_thresh
                 )
-                class_aps[class_label] = round(ap, 4)
+                class_aps.append(ap)
+            all_aps_50_95.append(np.mean(class_aps) if class_aps else 0.0)
 
-            mAP = np.mean(list(class_aps.values())) if class_aps else 0.0
-            self.log(f"mAP@0.5: {mAP:.4f}")
+        mAP_50_95 = np.mean(all_aps_50_95)
+        self.log(f"mAP@[0.5:0.95]: {mAP_50_95:.4f}")
 
-            return ScoringResult(
-                success=True,
-                score=round(mAP, 6),
-                metrics={
-                    "mAP_50": round(mAP, 6),
-                    "per_class_ap": class_aps,
-                    "num_classes": len(all_classes),
-                    "num_predictions": len(prediction_df),
-                    "num_ground_truth": len(ground_truth_df),
-                },
-                logs=self.logs,
-            )
+        # Determine primary score based on metric_type
+        if self.metric_type == "MAP_50_95":
+            primary_score = mAP_50_95
+        else:
+            primary_score = mAP_50
+
+        return ScoringResult(
+            success=True,
+            score=round(primary_score, 6),
+            metrics={
+                "MAP": round(mAP_50, 6),
+                "MAP_50_95": round(mAP_50_95, 6),
+                "per_class_ap_50": class_aps_50,
+                "num_classes": len(all_classes),
+                "num_predictions": len(prediction_df),
+                "num_ground_truth": len(ground_truth_df),
+            },
+            logs=self.logs,
+        )

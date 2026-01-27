@@ -23,6 +23,7 @@ from .models import (
     Submission,
     SubmissionStatus,
     CompetitionStatus,
+    MetricType,
 )
 
 
@@ -228,8 +229,17 @@ def submission_history(request, competition_id):
         user=request.user
     ).prefetch_related('logs').order_by('-submitted_at')[:50]
     
+    # Get labels for metrics
+    metric_labels = {m.value: m.label for m in MetricType}
+    available_metrics = [
+        {'key': m, 'label': metric_labels.get(m, m)}
+        for m in (competition.available_metrics or [])
+    ]
+    
     return render(request, 'competitions/partials/history.html', {
-        'submissions': submissions
+        'competition': competition,
+        'submissions': submissions,
+        'available_metrics': available_metrics,
     })
 
 
@@ -300,32 +310,58 @@ def leaderboard(request, competition_id):
             status=SubmissionStatus.SUCCESS,
             public_score__isnull=False
         ).values('user_id', 'user__username').annotate(
-            score=Max('public_score'),
+            best_score=Max('public_score'),
             submission_count=Count('id'),
             last_submission=Max('submitted_at')
-        ).order_by('-score')
+        ).order_by('-best_score')
         
-        leaderboard_data = [
-            {
+        leaderboard_data = []
+        for entry in user_best:
+            # Find the actual submission object that has this best score to get all_scores
+            # (Note: if multiple submissions have same best score, we take the latest one)
+            best_submission = Submission.objects.filter(
+                competition=competition,
+                user_id=entry['user_id'],
+                status=SubmissionStatus.SUCCESS,
+                public_score=entry['best_score']
+            ).order_by('-submitted_at').first()
+            
+            leaderboard_data.append({
                 'user_id': entry['user_id'],
                 'username': entry['user__username'],
-                'score': entry['score'],
+                'score': entry['best_score'],
+                'all_scores': best_submission.all_scores if best_submission else {},
                 'submission_count': entry['submission_count'],
                 'last_submission': entry['last_submission'],
-            }
-            for entry in user_best
-        ]
+            })
     
     # Sort by score (descending) and add ranks
     leaderboard_data.sort(key=lambda x: x['score'] or 0, reverse=True)
     
+    # Get labels for available metrics
+    metric_labels = {m.value: m.label for m in MetricType}
+    available_metrics = [
+        {'key': m, 'label': metric_labels.get(m, m)}
+        for m in (competition.available_metrics or [])
+    ]
+    
     for i, entry in enumerate(leaderboard_data, 1):
         entry['rank'] = i
         entry['is_current_user'] = entry['user_id'] == request.user.id
+        
+        # Format additional scores for display
+        entry['display_scores'] = []
+        for m in (competition.available_metrics or []):
+            val = entry.get('all_scores', {}).get(m) if show_private else entry.get('all_scores', {}).get(m)
+            # Actually, both use all_scores now
+            val = entry.get('all_scores', {}).get(m)
+            entry['display_scores'].append(val)
     
     return render(request, 'competitions/partials/leaderboard.html', {
+        'competition': competition,
         'leaderboard': leaderboard_data,
         'show_private': show_private,
+        'available_metrics': available_metrics,
     })
 
 

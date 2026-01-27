@@ -1,4 +1,5 @@
 <!-- HTMX partial: Submission history table -->
+{% load competition_extras %}
 {% if submissions %}
 <div class="overflow-x-auto">
     <table class="table table-zebra">
@@ -7,7 +8,10 @@
                 <th>#</th>
                 <th>Submitted At</th>
                 <th>Status</th>
-                <th>Public Score</th>
+                {% for metric in available_metrics %}
+                <th>{{ metric.label }}</th>
+                {% endfor %}
+                <th class="{% if available_metrics %}text-slate-400 font-normal{% endif %}">Primary Score</th>
                 <th>Final</th>
                 <th>Action</th>
             </tr>
@@ -18,14 +22,14 @@
                 <td>{{ submission.id }}</td>
                 <td>{{ submission.submitted_at|date:"Y-m-d H:i" }}</td>
                 <td>
-                    {% if submission.status == 'PENDING' %}
+                    {% if submission.status == "PENDING" %}
                     <span class="badge badge-ghost">Pending</span>
-                    {% elif submission.status == 'PROCESSING' %}
+                    {% elif submission.status == "PROCESSING" %}
                     <span class="badge badge-info">
                         <span class="loading loading-spinner loading-xs mr-1"></span>
                         Processing
                     </span>
-                    {% elif submission.status == 'SUCCESS' %}
+                    {% elif submission.status == "SUCCESS" %}
                     <span class="badge badge-success">Success</span>
                     {% else %}
                     <span class="badge badge-error tooltip" data-tip="{{ submission.error_message }}">
@@ -34,8 +38,25 @@
                     {% endif %}
                 </td>
                 <td>
+                    {% if submission.status == "SUCCESS" %}
+                    {% for metric in available_metrics %}
+                    <span class="font-mono font-bold">
+                        {% with val=submission.all_scores|dict_get:metric.key %}
+                        {% if val is not None %}{{ val|floatformat:4 }}{% else %}-{% endif %}
+                        {% endwith %}
+                    </span>
+                    {% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                    {% else %}
+                    <span class="text-slate-400">-</span>
+                    {% endif %}
+                </td>
+                <td class="{% if available_metrics %}bg-base-200/30{% endif %}">
                     {% if submission.public_score is not None %}
-                    <span class="font-mono font-bold">{{ submission.public_score|floatformat:4 }}</span>
+                    <span
+                        class="font-mono {% if not available_metrics %}font-bold{% else %}text-slate-500 text-xs{% endif %}">
+                        {{ submission.public_score|floatformat:4 }}
+                    </span>
                     {% else %}
                     <span class="text-slate-400">-</span>
                     {% endif %}
@@ -46,8 +67,8 @@
                         <i data-lucide="check" class="w-3 h-3 mr-1"></i> Final
                     </span>
                     {% else %}
-                    {% if submission.status == 'SUCCESS' %}
-                    <button class="btn btn-xs btn-outline" hx-post="{% url 'set_final_selection' submission.id %}"
+                    {% if submission.status == "SUCCESS" %}
+                    <button class="btn btn-xs btn-outline" hx-post="{% url "set_final_selection" submission.id %}"
                         hx-target="closest tr" hx-swap="outerHTML"
                         hx-confirm="Are you sure you want to set this as the final selection?">
                         Set as Final
@@ -58,7 +79,7 @@
                 <td>
                     <div class="flex items-center gap-1">
                         <button class="btn btn-xs btn-ghost"
-                            onclick="document.getElementById('log_modal_{{ submission.id }}').showModal()"
+                            onclick="document.getElementById(\"log_modal_{{ submission.id }}\").showModal()"
                             title="View Logs">
                             <i data-lucide="file-text" class="w-4 h-4"></i>
                         </button>
@@ -78,8 +99,8 @@
                                 <div class="flex gap-4 border-b border-base-300 last:border-0 py-2">
                                     <span class="text-slate-500 whitespace-nowrap">{{ log.created_at|date:"Y-m-d H:i:s" }}</span>
                                     <span class="font-bold 
-                                        {% if log.level == 'ERROR' %}text-error
-                                        {% elif log.level == 'WARNING' %}text-warning
+                                        {% if log.level == "ERROR" %}text-error
+                                        {% elif log.level == "WARNING" %}text-warning
                                         {% else %}text-info{% endif %}">
                                         {{ log.level }}
                                     </span>
