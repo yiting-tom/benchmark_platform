@@ -96,16 +96,16 @@ class ClassificationScoringEngine(BaseScoringEngine):
         self, prediction_df: pd.DataFrame, ground_truth_df: pd.DataFrame
     ) -> ScoringResult:
         """
-        Calculate classification score.
+        Calculate classification metrics.
 
         Args:
-            prediction_df: DataFrame with same columns as ground truth
-            ground_truth_df: DataFrame with [id_column, label_column]
+            prediction_df: DataFrame containing predictions.
+            ground_truth_df: DataFrame containing ground truth.
 
         Returns:
             ScoringResult with granular metrics and per-class reports.
         """
-        # Merge on ID column to align predictions with ground truth
+        # Align predictions with ground truth
         merged = pd.merge(
             ground_truth_df,
             prediction_df,
@@ -117,26 +117,52 @@ class ClassificationScoringEngine(BaseScoringEngine):
         label_true_col = f"{self.label_column}_true"
         label_pred_col = f"{self.label_column}_pred"
 
-        # Check for missing predictions
+        # Handle missing predictions
         missing_count = merged[label_pred_col].isna().sum()
         if missing_count > 0:
             self.log(f"Warning: {missing_count} items have no prediction", "WARNING")
-            # Fill missing with a placeholder (will be counted as wrong)
             merged[label_pred_col] = merged[label_pred_col].fillna("__MISSING__")
 
-        y_true = merged[label_true_col]
-        y_pred = merged[label_pred_col]
+        # Generate report
+        report = self._generate_report(merged[label_true_col], merged[label_pred_col])
+        if not report:
+            return ScoringResult(success=False, error_message="Failed to generate report")
 
-        # Generate per-class report
+        # Extract and organize metrics
+        metrics = self._extract_metrics(report, len(merged), int(missing_count))
+
+        # Log summary
+        self.log(f"Accuracy: {metrics['ACCURACY']:.4f}")
+        self.log(f"F1 (macro): {metrics['F1_MACRO']:.4f}")
+        self.log(f"F1 (weighted): {metrics['F1_WEIGHTED']:.4f}")
+
+        if self.metric_target_class:
+            self.log(
+                f"Target Class '{self.metric_target_class}' F1: {metrics.get('CLASS_F1', 0.0):.4f}"
+            )
+
+        # Select primary score
+        primary_score = metrics.get(self.metric_type, metrics["ACCURACY"])
+
+        return ScoringResult(
+            success=True,
+            score=round(primary_score, 6),
+            metrics=metrics,
+            logs=self.logs,
+        )
+
+    def _generate_report(self, y_true: pd.Series, y_pred: pd.Series) -> dict:
+        """Generate classification report using sklearn."""
         try:
-            report = classification_report(
+            return classification_report(
                 y_true, y_pred, output_dict=True, zero_division=0
             )
         except Exception as e:
             self.log(f"Failed to generate classification report: {e}", "ERROR")
-            report = {}
+            return {}
 
-        # Extract common aggregated metrics
+    def _extract_metrics(self, report: dict, total_samples: int, missing_count: int) -> dict:
+        """Extract and format metrics from the classification report."""
         macro_avg = report.get("macro avg", {})
         weighted_avg = report.get("weighted avg", {})
         accuracy = report.get("accuracy", 0.0)
@@ -147,48 +173,30 @@ class ClassificationScoringEngine(BaseScoringEngine):
             "F1_MICRO": round(accuracy, 6),
             "F1_WEIGHTED": round(weighted_avg.get("f1-score", 0.0), 6),
             "PRECISION_MACRO": round(macro_avg.get("precision", 0.0), 6),
-            "PRECISION_MICRO": round(accuracy, 6),  # Precision-micro == Accuracy in multiclass
+            "PRECISION_MICRO": round(accuracy, 6),
             "PRECISION_WEIGHTED": round(weighted_avg.get("precision", 0.0), 6),
             "RECALL_MACRO": round(macro_avg.get("recall", 0.0), 6),
-            "RECALL_MICRO": round(accuracy, 6),  # Recall-micro == Accuracy in multiclass
+            "RECALL_MICRO": round(accuracy, 6),
             "RECALL_WEIGHTED": round(weighted_avg.get("recall", 0.0), 6),
-            "total_samples": len(merged),
-            "missing_predictions": int(missing_count),
+            "total_samples": total_samples,
+            "missing_predictions": missing_count,
             "per_class_report": report,
         }
 
-        # Add aliases for standard F1/Precision/Recall (Macro)
+        # Legacy aliases
         metrics["F1"] = metrics["F1_MACRO"]
         metrics["PRECISION"] = metrics["PRECISION_MACRO"]
         metrics["RECALL"] = metrics["RECALL_MACRO"]
 
-        # Handle class-specific metrics
+        # Per-class metrics
         if self.metric_target_class:
-            class_report = report.get(str(self.metric_target_class), {})
-            metrics["CLASS_F1"] = round(class_report.get("f1-score", 0.0), 6)
-            metrics["CLASS_PRECISION"] = round(class_report.get("precision", 0.0), 6)
-            metrics["CLASS_RECALL"] = round(class_report.get("recall", 0.0), 6)
+            cls_rpt = report.get(str(self.metric_target_class), {})
+            metrics["CLASS_F1"] = round(cls_rpt.get("f1-score", 0.0), 6)
+            metrics["CLASS_PRECISION"] = round(cls_rpt.get("precision", 0.0), 6)
+            metrics["CLASS_RECALL"] = round(cls_rpt.get("recall", 0.0), 6)
         else:
             metrics["CLASS_F1"] = 0.0
             metrics["CLASS_PRECISION"] = 0.0
             metrics["CLASS_RECALL"] = 0.0
 
-        # Log main stats
-        self.log(f"Accuracy: {accuracy:.4f}")
-        self.log(f"F1 (macro): {metrics['F1_MACRO']:.4f}")
-        self.log(f"F1 (weighted): {metrics['F1_WEIGHTED']:.4f}")
-
-        if self.metric_target_class:
-            self.log(
-                f"Target Class '{self.metric_target_class}' F1: {metrics['CLASS_F1']:.4f}"
-            )
-
-        # Determine primary score based on metric_type
-        primary_score = metrics.get(self.metric_type, metrics["ACCURACY"])
-
-        return ScoringResult(
-            success=True,
-            score=round(primary_score, 6),
-            metrics=metrics,
-            logs=self.logs,
-        )
+        return metrics

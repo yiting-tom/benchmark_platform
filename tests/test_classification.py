@@ -11,71 +11,84 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from scoring.engines.classification import ClassificationScoringEngine
 
 
-def test_classification_scorer():
-    """Test basic classification scoring."""
-    fixtures_dir = Path(__file__).parent / "fixtures"
+def run_test(name, engine, pred_path):
+    """Helper to run a test and print results."""
+    print(f"\n--- {name} ---")
+    result = engine.score(pred_path)
+    print(f"Success: {result.success}")
+    print(f"Score: {result.score}")
+    return result
+
+
+def test_basic_accuracy(fixtures_dir):
     gt_path = fixtures_dir / "classification_gt.csv"
     pred_path = fixtures_dir / "classification_pred.csv"
-
-    # Test with ACCURACY metric
     engine = ClassificationScoringEngine(gt_path, metric_type="ACCURACY")
-    result = engine.score(pred_path)
+    result = run_test("Basic Accuracy", engine, pred_path)
+    assert result.success
+    assert result.score == 0.6
 
-    print("=== Classification Scoring Test ===")
-    print(f"Success: {result.success}")
-    print(f"Score (Accuracy): {result.score}")
-    print(f"Metrics: {result.metrics}")
-    print(f"Logs: {result.logs}")
 
-    # Verify expected results
-    # Ground truth: cat, dog, cat, bird, dog
-    # Prediction:   cat, dog, dog, bird, cat
-    # Correct:      ✓    ✓    ✗    ✓     ✗   = 3/5 = 0.6
-
-    assert result.success, "Scoring should succeed"
-    assert result.score == 0.6, f"Expected accuracy 0.6, got {result.score}"
-
-    # Test with PRECISION metric
+def test_granular_metrics(fixtures_dir):
+    gt_path = fixtures_dir / "classification_gt.csv"
+    pred_path = fixtures_dir / "classification_pred.csv"
+    
+    # Test Precision (Macro)
     engine = ClassificationScoringEngine(gt_path, metric_type="PRECISION")
-    result = engine.score(pred_path)
-    print(f"Score (Precision): {result.score}")
-    assert result.score > 0, "Precision should be positive"
-
-    # Test with RECALL metric
+    result = run_test("Precision (Macro)", engine, pred_path)
+    assert result.score > 0
+    
+    # Test Recall (Macro)
     engine = ClassificationScoringEngine(gt_path, metric_type="RECALL")
-    result = engine.score(pred_path)
-    print(f"Score (Recall): {result.score}")
-    assert result.score > 0, "Recall should be positive"
-
-    # Verify all metrics are present in results
-    assert "PRECISION_MACRO" in result.metrics
-    assert "F1_WEIGHTED" in result.metrics
-    assert "ACCURACY" in result.metrics
-    assert "F1" in result.metrics
-
-    # Test with WEIGHTED metric
+    result = run_test("Recall (Macro)", engine, pred_path)
+    assert result.score > 0
+    
+    # Test F1 (Weighted)
     engine = ClassificationScoringEngine(gt_path, metric_type="F1_WEIGHTED")
-    result = engine.score(pred_path)
-    print(f"Score (F1 Weighted): {result.score}")
+    result = run_test("F1 (Weighted)", engine, pred_path)
     assert result.score == result.metrics["F1_WEIGHTED"]
 
-    # Test with CLASS-specific metric (Target: cat)
+
+def test_class_specific_metrics(fixtures_dir):
+    gt_path = fixtures_dir / "classification_gt.csv"
+    pred_path = fixtures_dir / "classification_pred.csv"
     engine = ClassificationScoringEngine(
         gt_path, metric_type="CLASS_F1", metric_target_class="cat"
     )
-    result = engine.score(pred_path)
-    print(f"Score (Class F1 - cat): {result.score}")
+    result = run_test("Class-Specific F1 (cat)", engine, pred_path)
+    assert result.score == 0.5
+
+
+def test_edge_cases(fixtures_dir):
+    gt_path = fixtures_dir / "classification_gt.csv"
+    pred_path = fixtures_dir / "classification_pred.csv"
     
-    # Ground truth: cat, dog, cat, bird, dog
-    # Prediction:   cat, dog, dog, bird, cat
-    # For 'cat': TP=1 (image 1), FP=1 (image 5), FN=1 (image 3)
-    # Precision = 1 / (1+1) = 0.5
-    # Recall = 1 / (1+1) = 0.5
-    # F1 = 2 * (0.5*0.5)/(0.5+0.5) = 0.5
-    assert result.score == 0.5, f"Expected 0.5 for cat F1, got {result.score}"
-    assert result.metrics["CLASS_F1"] == 0.5
+    # Partial predictions
+    partial_pred_path = fixtures_dir / "classification_partial_pred.csv"
+    engine = ClassificationScoringEngine(gt_path, metric_type="ACCURACY")
+    result = run_test("Partial Predictions", engine, partial_pred_path)
+    assert result.score == 0.4
+    assert result.metrics["missing_predictions"] == 3
+
+    # Invalid target class
+    engine = ClassificationScoringEngine(
+        gt_path, metric_type="CLASS_F1", metric_target_class="not_a_class"
+    )
+    result = run_test("Invalid Target Class", engine, pred_path)
+    assert result.score == 0.0
+
+
+def main():
+    print("=== Classification Scoring Tests ===")
+    fixtures_dir = Path(__file__).parent / "fixtures"
+    
+    test_basic_accuracy(fixtures_dir)
+    test_granular_metrics(fixtures_dir)
+    test_class_specific_metrics(fixtures_dir)
+    test_edge_cases(fixtures_dir)
+    
     print("\n✅ All tests passed!")
 
 
 if __name__ == "__main__":
-    test_classification_scorer()
+    main()
