@@ -11,6 +11,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from scoring.engines.classification import ClassificationScoringEngine
 
 
+import pytest
+
+
+@pytest.fixture
+def fixtures_dir():
+    """Fixture for the fixtures directory."""
+    return Path(__file__).parent / "fixtures"
+
+
 def run_test(name, engine, pred_path):
     """Helper to run a test and print results."""
     print(f"\n--- {name} ---")
@@ -80,12 +89,12 @@ def test_edge_cases(fixtures_dir):
 
 def main():
     print("=== Classification Scoring Tests ===")
-    fixtures_dir = Path(__file__).parent / "fixtures"
+    fd = Path(__file__).parent / "fixtures"
     
-    test_basic_accuracy(fixtures_dir)
-    test_granular_metrics(fixtures_dir)
-    test_class_specific_metrics(fixtures_dir)
-    test_edge_cases(fixtures_dir)
+    test_basic_accuracy(fd)
+    test_granular_metrics(fd)
+    test_class_specific_metrics(fd)
+    test_edge_cases(fd)
     
     print("\n✅ All tests passed!")
 
