@@ -1,0 +1,61 @@
+{% load competition_extras %}
+<div class="space-y-4">
+    <div class="flex justify-between items-center border-b border-base-300 pb-2">
+        <h4 class="font-bold text-lg">Per-Class Metrics</h4>
+        <span class="badge badge-outline">Public Score: {{ submission.public_score|floatformat:4 }}</span>
+    </div>
+
+    {% if report_data %}
+    <div class="overflow-x-auto">
+        <table class="table table-sm w-full">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1-Score</th>
+                    <th>Support</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, metrics in report_data.items %}
+                {% if key != 'accuracy' and key != 'macro avg' and key != 'weighted avg' %}
+                <tr>
+                    <td class="font-medium">{{ key }}</td>
+                    <td>{{ metrics.precision|floatformat:4 }}</td>
+                    <td>{{ metrics.recall|floatformat:4 }}</td>
+                    <td>{{ metrics|dict_get:"f1-score"|floatformat:4 }}</td>
+                    <td>{{ metrics.support }}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+            <tfoot class="bg-base-200/50">
+                {% with macro=report_data|dict_get:'macro avg' %}
+                {% if macro %}
+                <tr>
+                    <td class="font-bold">Macro Average</td>
+                    <td>{{ macro.precision|floatformat:4 }}</td>
+                    <td>{{ macro.recall|floatformat:4 }}</td>
+                    <td>{{ macro|dict_get:"f1-score"|floatformat:4 }}</td>
+                    <td>{{ macro.support }}</td>
+                </tr>
+                {% endif %}
+                {% endwith %}
+
+                {% if report_data.accuracy %}
+                <tr>
+                    <td colspan="3" class="font-bold text-right">Overall Accuracy</td>
+                    <td class="font-black text-primary">{{ report_data.accuracy|floatformat:4 }}</td>
+                    <td></td>
+                </tr>
+                {% endif %}
+            </tfoot>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-slate-500 italic">
+        No per-class metrics available for this submission.
+    </div>
+    {% endif %}
+</div>

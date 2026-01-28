@@ -1,11 +1,8 @@
-from pathlib import Path
-import pandas as pd
 from django.test import TestCase
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from competitions.models import Competition, TaskType, Submission, SubmissionStatus, SubmissionLog
 from scoring.tasks import score_submission
-from scoring.engines.base import ScoringResult
 
 class CustomScoringTest(TestCase):
     def setUp(self):

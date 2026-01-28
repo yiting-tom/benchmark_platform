@@ -6,7 +6,6 @@ import importlib.util
 import sys
 from pathlib import Path
 import pandas as pd
-from typing import Any
 
 from .base import BaseScoringEngine, ScoringResult
 

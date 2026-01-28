@@ -10,7 +10,6 @@ Prediction must match: [id_col], [class_col], [rle_mask_col]
 
 import numpy as np
 import pandas as pd
-from collections import defaultdict
 
 from .base import BaseScoringEngine, ScoringResult
 

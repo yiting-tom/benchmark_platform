@@ -7,12 +7,12 @@ from competitions.models import (
     SubmissionStatus,
     LogLevel,
     TaskType,
-    MetricType,
 )
 from .engines.classification import ClassificationScoringEngine
 from .engines.detection import DetectionScoringEngine
 from .engines.segmentation import SegmentationScoringEngine
 from .engines.custom import CustomScoringEngine
+from typing import Tuple
 
 
 def get_scoring_engine(competition: Competition):
@@ -46,13 +46,25 @@ def get_scoring_engine(competition: Competition):
         raise ValueError(f"Unknown task type: {competition.task_type}")
 
 
-def add_submission_log(submission: Submission, message: str, level: str = LogLevel.INFO):
+def add_submission_log(submission: Submission, message: str, level: str = LogLevel.INFO) -> None:
     """Helper to add a log entry to a submission."""
     SubmissionLog.objects.create(
         submission=submission,
         level=level,
         message=message
     )
+
+
+def parse_engine_log(log_msg: str) -> Tuple[str, str]:
+    """Parse log level and message from engine log string."""
+    if log_msg.startswith("[ERROR]"):
+        return LogLevel.ERROR, log_msg.replace("[ERROR] ", "", 1)
+    elif log_msg.startswith("[WARNING]"):
+        return LogLevel.WARNING, log_msg.replace("[WARNING] ", "", 1)
+    elif log_msg.startswith("[INFO]"):
+        return LogLevel.INFO, log_msg.replace("[INFO] ", "", 1)
+    else:
+        return LogLevel.INFO, log_msg
 
 
 def score_submission(submission_id: int) -> dict:
@@ -88,20 +100,7 @@ def score_submission(submission_id: int) -> dict:
         
         # Save logs from engine
         for log_msg in (result.logs or []):
-            # Parse log level and strip prefix
-            if log_msg.startswith("[ERROR]"):
-                level = LogLevel.ERROR
-                message = log_msg.replace("[ERROR] ", "", 1)
-            elif log_msg.startswith("[WARNING]"):
-                level = LogLevel.WARNING
-                message = log_msg.replace("[WARNING] ", "", 1)
-            elif log_msg.startswith("[INFO]"):
-                level = LogLevel.INFO
-                message = log_msg.replace("[INFO] ", "", 1)
-            else:
-                level = LogLevel.INFO
-                message = log_msg
-            
+            level, message = parse_engine_log(log_msg)
             add_submission_log(submission, message, level)
         
         if result.success:

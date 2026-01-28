@@ -7,11 +7,12 @@ Handles participant-facing pages:
 - HTMX partials for history, leaderboard
 """
 
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Max
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.contrib import messages
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.views import View
 from django.views.decorators.http import require_POST
@@ -24,13 +25,20 @@ from .models import (
     SubmissionStatus,
     CompetitionStatus,
     MetricType,
+    RegistrationWhitelist,
+)
+from .utils import (
+    get_leaderboard_data,
+    get_score_trend_data,
+    get_score_distribution_data,
+    get_expected_format_hint,
 )
 
 
 class CompetitionListView(LoginRequiredMixin, View):
     """List competitions the current user can participate in."""
     
-    def get(self, request):
+    def get(self, request: HttpRequest) -> HttpResponse:
         now = timezone.now()
         
         # Get all participations for this user
@@ -64,7 +72,7 @@ class CompetitionListView(LoginRequiredMixin, View):
 class CompetitionDetailView(LoginRequiredMixin, View):
     """Competition detail page with upload form."""
     
-    def get(self, request, competition_id):
+    def get(self, request: HttpRequest, competition_id: int) -> HttpResponse:
         competition = get_object_or_404(Competition, id=competition_id)
         
         # Check if user is a participant
@@ -105,7 +113,7 @@ class CompetitionDetailView(LoginRequiredMixin, View):
             upload_error = "Total upload limit reached"
         
         # Detect expected columns from ground truth file
-        expected_format = self._get_expected_format(competition)
+        expected_format = get_expected_format_hint(competition)
         
         return render(request, 'competitions/detail.html', {
             'competition': competition,
@@ -117,39 +125,12 @@ class CompetitionDetailView(LoginRequiredMixin, View):
             'expected_format': expected_format,
         })
     
-    def _get_expected_format(self, competition):
-        """Detect expected CSV format from ground truth file."""
-        import pandas as pd
-        from .models import TaskType
-        
-        try:
-            if competition.public_ground_truth:
-                df = pd.read_csv(competition.public_ground_truth.path, nrows=0)
-                columns = list(df.columns)
-                
-                if competition.task_type == TaskType.DETECTION:
-                    # Detection needs additional 'confidence' column
-                    return ", ".join(columns[:2]) + ", confidence, " + ", ".join(columns[2:])
-                elif competition.task_type == TaskType.SEGMENTATION:
-                    # Segmentation prediction doesn't need height/width
-                    return ", ".join(columns[:3])
-                else:
-                    return ", ".join(columns)
-        except Exception:
-            pass
-        
-        # Fallback to default hints
-        if competition.task_type == TaskType.CLASSIFICATION:
-            return "id_column, label_column"
-        elif competition.task_type == TaskType.DETECTION:
-            return "id, class, confidence, xmin, ymin, xmax, ymax"
-        else:
-            return "id, class, rle_mask"
+
 
 
 @login_required
 @require_POST
-def upload_prediction(request, competition_id):
+def upload_prediction(request: HttpRequest, competition_id: int) -> HttpResponse:
     """Handle prediction file upload (HTMX endpoint)."""
     competition = get_object_or_404(Competition, id=competition_id)
     
@@ -162,16 +143,13 @@ def upload_prediction(request, competition_id):
     )
     
     # Check limits
-    today_count = Submission.get_today_count(competition, request.user)
-    total_count = Submission.get_total_count(competition, request.user)
-    
-    if today_count >= competition.daily_upload_limit:
+    if not Submission(competition=competition, user=request.user).can_submit_more_today():
         return render(request, 'competitions/partials/upload_result.html', {
             'success': False,
             'error': 'Daily upload limit reached'
         })
     
-    if total_count >= competition.total_upload_limit:
+    if not Submission(competition=competition, user=request.user).can_submit_more_total():
         return render(request, 'competitions/partials/upload_result.html', {
             'success': False,
             'error': 'Total upload limit reached'
@@ -214,13 +192,13 @@ def upload_prediction(request, competition_id):
     return render(request, 'competitions/partials/upload_result.html', {
         'success': True,
         'submission_id': submission.id,
-        'today_count': today_count + 1,
-        'total_count': total_count + 1,
+        'today_count': Submission.get_today_count(competition, request.user),
+        'total_count': Submission.get_total_count(competition, request.user),
     })
 
 
 @login_required
-def submission_history(request, competition_id):
+def submission_history(request: HttpRequest, competition_id: int) -> HttpResponse:
     """Get submission history for current user (HTMX endpoint)."""
     competition = get_object_or_404(Competition, id=competition_id)
     
@@ -245,7 +223,7 @@ def submission_history(request, competition_id):
 
 @login_required
 @require_POST
-def set_final_selection(request, submission_id):
+def set_final_selection(request: HttpRequest, submission_id: int) -> HttpResponse:
     """Set a submission as the final selection (HTMX endpoint)."""
     submission = get_object_or_404(
         Submission,
@@ -272,71 +250,15 @@ def set_final_selection(request, submission_id):
 
 
 @login_required
-def leaderboard(request, competition_id):
+def leaderboard(request: HttpRequest, competition_id: int) -> HttpResponse:
     """Get competition leaderboard (HTMX endpoint)."""
     competition = get_object_or_404(Competition, id=competition_id)
     
     # Determine which score to use
     show_private = competition.status == CompetitionStatus.ENDED
-    score_field = 'private_score' if show_private else 'public_score'
     
-    # Get best score per user
-    # For public: use user's best public score
-    # For private: use their final selection's private score
-    
-    if show_private:
-        # Use final selections only
-        submissions = Submission.objects.filter(
-            competition=competition,
-            is_final_selection=True,
-            private_score__isnull=False
-        ).select_related('user')
-        
-        leaderboard_data = []
-        for s in submissions:
-            leaderboard_data.append({
-                'user_id': s.user_id,
-                'username': s.user.username,
-                'score': s.private_score,
-                'submission_count': Submission.get_total_count(competition, s.user),
-                'last_submission': s.submitted_at,
-            })
-    else:
-        # Use best public score per user
-        from django.db.models import Max
-        
-        user_best = Submission.objects.filter(
-            competition=competition,
-            status=SubmissionStatus.SUCCESS,
-            public_score__isnull=False
-        ).values('user_id', 'user__username').annotate(
-            best_score=Max('public_score'),
-            submission_count=Count('id'),
-            last_submission=Max('submitted_at')
-        ).order_by('-best_score')
-        
-        leaderboard_data = []
-        for entry in user_best:
-            # Find the actual submission object that has this best score to get all_scores
-            # (Note: if multiple submissions have same best score, we take the latest one)
-            best_submission = Submission.objects.filter(
-                competition=competition,
-                user_id=entry['user_id'],
-                status=SubmissionStatus.SUCCESS,
-                public_score=entry['best_score']
-            ).order_by('-submitted_at').first()
-            
-            leaderboard_data.append({
-                'user_id': entry['user_id'],
-                'username': entry['user__username'],
-                'score': entry['best_score'],
-                'all_scores': best_submission.all_scores if best_submission else {},
-                'submission_count': entry['submission_count'],
-                'last_submission': entry['last_submission'],
-            })
-    
-    # Sort by score (descending) and add ranks
-    leaderboard_data.sort(key=lambda x: x['score'] or 0, reverse=True)
+    # Get leaderboard data using utility
+    leaderboard_data = get_leaderboard_data(competition, show_private)
     
     # Get labels for available metrics
     metric_labels = {m.value: m.label for m in MetricType}
@@ -345,15 +267,12 @@ def leaderboard(request, competition_id):
         for m in (competition.available_metrics or [])
     ]
     
-    for i, entry in enumerate(leaderboard_data, 1):
-        entry['rank'] = i
+    for entry in leaderboard_data:
         entry['is_current_user'] = entry['user_id'] == request.user.id
         
         # Format additional scores for display
         entry['display_scores'] = []
         for m in (competition.available_metrics or []):
-            val = entry.get('all_scores', {}).get(m) if show_private else entry.get('all_scores', {}).get(m)
-            # Actually, both use all_scores now
             val = entry.get('all_scores', {}).get(m)
             entry['display_scores'].append(val)
     
@@ -366,90 +285,90 @@ def leaderboard(request, competition_id):
 
 
 @login_required
-def leaderboard_chart_data(request, competition_id):
+def leaderboard_chart_data(request: HttpRequest, competition_id: int) -> JsonResponse:
     """Return JSON data for leaderboard charts."""
-    from collections import defaultdict
-    
     competition = get_object_or_404(Competition, id=competition_id)
+    
+    # Determine which score to use
     show_private = competition.status == CompetitionStatus.ENDED
     score_field = 'private_score' if show_private else 'public_score'
     
-    # Get all successful submissions with scores
-    submissions = Submission.objects.filter(
-        competition=competition,
-        status=SubmissionStatus.SUCCESS,
-        **{f'{score_field}__isnull': False}
-    ).select_related('user').order_by('submitted_at')
-    
     # --- Score Trend Data ---
-    # Track best score per user over time
-    user_best_scores = defaultdict(lambda: {'scores': [], 'timestamps': []})
-    user_running_best = {}
-    
-    for s in submissions:
-        username = s.user.username
-        score = getattr(s, score_field)
-        timestamp = s.submitted_at.isoformat()
-        
-        # Update running best
-        if username not in user_running_best or score > user_running_best[username]:
-            user_running_best[username] = score
-            user_best_scores[username]['scores'].append(score)
-            user_best_scores[username]['timestamps'].append(timestamp)
-    
-    # Build datasets for Chart.js
-    colors = [
-        'rgb(59, 130, 246)',   # blue
-        'rgb(239, 68, 68)',    # red
-        'rgb(34, 197, 94)',    # green
-        'rgb(168, 85, 247)',   # purple
-        'rgb(249, 115, 22)',   # orange
-        'rgb(236, 72, 153)',   # pink
-        'rgb(20, 184, 166)',   # teal
-        'rgb(245, 158, 11)',   # amber
-    ]
-    
-    trend_datasets = []
-    for i, (username, data) in enumerate(user_best_scores.items()):
-        color = colors[i % len(colors)]
-        trend_datasets.append({
-            'label': username,
-            'data': [{'x': t, 'y': s} for t, s in zip(data['timestamps'], data['scores'])],
-            'borderColor': color,
-            'backgroundColor': color,
-            'tension': 0.3,
-            'fill': False,
-        })
+    trend_datasets = get_score_trend_data(competition, score_field)
     
     # --- Score Distribution Data ---
-    # Get final best scores per user
-    final_scores = list(user_running_best.values())
-    
-    if final_scores:
-        min_score = min(final_scores)
-        max_score = max(final_scores)
-        range_size = (max_score - min_score) / 5 if max_score > min_score else 0.2
-        
-        # Create 5 bins
-        bins = []
-        counts = []
-        for i in range(5):
-            bin_start = min_score + i * range_size
-            bin_end = min_score + (i + 1) * range_size
-            bins.append(f"{bin_start:.2f}-{bin_end:.2f}")
-            count = sum(1 for s in final_scores if bin_start <= s < bin_end or (i == 4 and s == bin_end))
-            counts.append(count)
-    else:
-        bins = []
-        counts = []
+    # Extract just the best scores for distribution
+    leaderboard_data = get_leaderboard_data(competition, show_private)
+    best_scores = [entry['score'] for entry in leaderboard_data if entry['score'] is not None]
+    distribution_data = get_score_distribution_data(best_scores)
     
     return JsonResponse({
         'trend': {
             'datasets': trend_datasets,
         },
-        'distribution': {
-            'labels': bins,
-            'data': counts,
-        }
+        'distribution': distribution_data
     })
+
+
+class RegisterView(View):
+    """User registration view with whitelist check."""
+    
+    def get(self, request: HttpRequest) -> HttpResponse:
+        if request.user.is_authenticated:
+            return redirect('competition_list')
+        return render(request, 'registration/register.html')
+        
+    def post(self, request: HttpRequest) -> HttpResponse:
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        
+        # Check whitelist
+        if not RegistrationWhitelist.objects.filter(username=username).exists():
+            return render(request, 'registration/register.html', {
+                'error': 'This username is not in the registration whitelist.',
+                'username': username,
+                'email': email
+            })
+            
+        # Check if user exists
+        if User.objects.filter(username=username).exists():
+            return render(request, 'registration/register.html', {
+                'error': 'A user with that username already exists.',
+                'username': username,
+                'email': email
+            })
+            
+        # Basic validation
+        if not password1 or password1 != password2:
+            return render(request, 'registration/register.html', {
+                'error': 'Passwords do not match or are empty.',
+                'username': username,
+                'email': email
+            })
+            
+        # Create user
+        User.objects.create_user(username=username, email=email, password=password1)
+        messages.success(request, 'Registration successful! Please log in.')
+        return redirect('login')
+
+
+@login_required
+def submission_report(request: HttpRequest, submission_id: int) -> HttpResponse:
+    """Get detailed scoring report for a submission (HTMX endpoint)."""
+    submission = get_object_or_404(
+        Submission, 
+        id=submission_id, 
+        user=request.user
+    )
+    
+    # Extract per-class report if available
+    report_data = submission.all_scores.get('per_class_report', {}) if submission.all_scores else {}
+    
+    return render(request, 'competitions/partials/report.html', {
+        'submission': submission,
+        'report_data': report_data,
+    })
+
 
