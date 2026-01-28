@@ -9,7 +9,7 @@ Example: filename, label OR image_id, label
 """
 
 import pandas as pd
-from sklearn.metrics import accuracy_score, f1_score, classification_report
+from sklearn.metrics import classification_report
 
 from .base import BaseScoringEngine, ScoringResult
 
@@ -20,23 +20,31 @@ class ClassificationScoringEngine(BaseScoringEngine):
 
     Supports metrics:
     - ACCURACY: Overall accuracy
-    - F1: Macro-averaged F1-score
+    - F1, PRECISION, RECALL (Macro, Micro, Weighted)
+    - CLASS-specific F1, Precision, Recall
 
     Column names are auto-detected from the Ground Truth file.
     """
 
     REQUIRED_COLUMNS = []  # Will be set dynamically from ground truth
 
-    def __init__(self, ground_truth_path, metric_type: str = "ACCURACY"):
+    def __init__(
+        self,
+        ground_truth_path,
+        metric_type: str = "ACCURACY",
+        metric_target_class: str = None,
+    ):
         """
         Initialize the classification scorer.
 
         Args:
             ground_truth_path: Path to ground truth CSV.
-            metric_type: Either "ACCURACY" or "F1".
+            metric_type: One of the MetricType values.
+            metric_target_class: Optional class name for Class-Specific metrics.
         """
         super().__init__(ground_truth_path)
         self.metric_type = metric_type
+        self.metric_target_class = metric_target_class
         self.id_column = None
         self.label_column = None
 
@@ -95,7 +103,7 @@ class ClassificationScoringEngine(BaseScoringEngine):
             ground_truth_df: DataFrame with [id_column, label_column]
 
         Returns:
-            ScoringResult with accuracy/F1 and per-class metrics.
+            ScoringResult with granular metrics and per-class reports.
         """
         # Merge on ID column to align predictions with ground truth
         merged = pd.merge(
@@ -119,36 +127,68 @@ class ClassificationScoringEngine(BaseScoringEngine):
         y_true = merged[label_true_col]
         y_pred = merged[label_pred_col]
 
-        # Calculate metrics
-        accuracy = accuracy_score(y_true, y_pred)
-        f1_macro = f1_score(y_true, y_pred, average="macro", zero_division=0)
-
-        self.log(f"Accuracy: {accuracy:.4f}")
-        self.log(f"F1 (macro): {f1_macro:.4f}")
-
-        # Determine primary score based on metric_type
-        if self.metric_type == "F1":
-            primary_score = f1_macro
-        else:
-            primary_score = accuracy
-
         # Generate per-class report
         try:
             report = classification_report(
                 y_true, y_pred, output_dict=True, zero_division=0
             )
-        except Exception:
+        except Exception as e:
+            self.log(f"Failed to generate classification report: {e}", "ERROR")
             report = {}
+
+        # Extract common aggregated metrics
+        macro_avg = report.get("macro avg", {})
+        weighted_avg = report.get("weighted avg", {})
+        accuracy = report.get("accuracy", 0.0)
+
+        metrics = {
+            "ACCURACY": round(accuracy, 6),
+            "F1_MACRO": round(macro_avg.get("f1-score", 0.0), 6),
+            "F1_MICRO": round(accuracy, 6),
+            "F1_WEIGHTED": round(weighted_avg.get("f1-score", 0.0), 6),
+            "PRECISION_MACRO": round(macro_avg.get("precision", 0.0), 6),
+            "PRECISION_MICRO": round(accuracy, 6),  # Precision-micro == Accuracy in multiclass
+            "PRECISION_WEIGHTED": round(weighted_avg.get("precision", 0.0), 6),
+            "RECALL_MACRO": round(macro_avg.get("recall", 0.0), 6),
+            "RECALL_MICRO": round(accuracy, 6),  # Recall-micro == Accuracy in multiclass
+            "RECALL_WEIGHTED": round(weighted_avg.get("recall", 0.0), 6),
+            "total_samples": len(merged),
+            "missing_predictions": int(missing_count),
+            "per_class_report": report,
+        }
+
+        # Add aliases for standard F1/Precision/Recall (Macro)
+        metrics["F1"] = metrics["F1_MACRO"]
+        metrics["PRECISION"] = metrics["PRECISION_MACRO"]
+        metrics["RECALL"] = metrics["RECALL_MACRO"]
+
+        # Handle class-specific metrics
+        if self.metric_target_class:
+            class_report = report.get(str(self.metric_target_class), {})
+            metrics["CLASS_F1"] = round(class_report.get("f1-score", 0.0), 6)
+            metrics["CLASS_PRECISION"] = round(class_report.get("precision", 0.0), 6)
+            metrics["CLASS_RECALL"] = round(class_report.get("recall", 0.0), 6)
+        else:
+            metrics["CLASS_F1"] = 0.0
+            metrics["CLASS_PRECISION"] = 0.0
+            metrics["CLASS_RECALL"] = 0.0
+
+        # Log main stats
+        self.log(f"Accuracy: {accuracy:.4f}")
+        self.log(f"F1 (macro): {metrics['F1_MACRO']:.4f}")
+        self.log(f"F1 (weighted): {metrics['F1_WEIGHTED']:.4f}")
+
+        if self.metric_target_class:
+            self.log(
+                f"Target Class '{self.metric_target_class}' F1: {metrics['CLASS_F1']:.4f}"
+            )
+
+        # Determine primary score based on metric_type
+        primary_score = metrics.get(self.metric_type, metrics["ACCURACY"])
 
         return ScoringResult(
             success=True,
             score=round(primary_score, 6),
-            metrics={
-                "ACCURACY": round(accuracy, 6),
-                "F1": round(f1_macro, 6),
-                "total_samples": len(merged),
-                "missing_predictions": int(missing_count),
-                "per_class_report": report,
-            },
+            metrics=metrics,
             logs=self.logs,
         )

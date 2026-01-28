@@ -25,7 +25,30 @@ class TaskType(models.TextChoices):
 class MetricType(models.TextChoices):
     """Supported evaluation metrics."""
     ACCURACY = 'ACCURACY', 'Accuracy'
-    F1 = 'F1', 'F1-Score'
+    
+    # F1 variants
+    F1 = 'F1', 'F1-Score (Macro)'
+    F1_MACRO = 'F1_MACRO', 'F1-Score (Macro)'
+    F1_MICRO = 'F1_MICRO', 'F1-Score (Micro / Accuracy)'
+    F1_WEIGHTED = 'F1_WEIGHTED', 'F1-Score (Weighted)'
+    
+    # Precision variants
+    PRECISION = 'PRECISION', 'Precision (Macro)'
+    PRECISION_MACRO = 'PRECISION_MACRO', 'Precision (Macro)'
+    PRECISION_MICRO = 'PRECISION_MICRO', 'Precision (Micro)'
+    PRECISION_WEIGHTED = 'PRECISION_WEIGHTED', 'Precision (Weighted)'
+    
+    # Recall variants
+    RECALL = 'RECALL', 'Recall (Macro)'
+    RECALL_MACRO = 'RECALL_MACRO', 'Recall (Macro)'
+    RECALL_MICRO = 'RECALL_MICRO', 'Recall (Micro)'
+    RECALL_WEIGHTED = 'RECALL_WEIGHTED', 'Recall (Weighted)'
+    
+    # Per-class variants
+    CLASS_F1 = 'CLASS_F1', 'F1-Score (Class-Specific)'
+    CLASS_PRECISION = 'CLASS_PRECISION', 'Precision (Class-Specific)'
+    CLASS_RECALL = 'CLASS_RECALL', 'Recall (Class-Specific)'
+
     MAP = 'MAP', 'mAP@0.5'
     MAP_50_95 = 'MAP_50_95', 'mAP@[0.5:0.95]'
     MIOU = 'MIOU', 'mIoU'
@@ -139,6 +162,13 @@ class Competition(models.Model):
         choices=CompetitionStatus.choices,
         default=CompetitionStatus.DRAFT,
         verbose_name='Status'
+    )
+
+    metric_target_class = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Metric Target Class',
+        help_text='Required if selecting a Class-Specific metric'
     )
 
     available_metrics = models.JSONField(

@@ -67,7 +67,7 @@ class CompetitionAdmin(admin.ModelAdmin):
     fieldsets = (
         (
             "General Information",
-            {"fields": ("name", "description", "task_type", "metric_type", "available_metrics")},
+            {"fields": ("name", "description", "task_type", "metric_type", "metric_target_class", "available_metrics")},
         ),
         (
             "Data Settings",

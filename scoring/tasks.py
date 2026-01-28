@@ -35,7 +35,9 @@ def get_scoring_engine(competition: Competition):
         return CustomScoringEngine(ground_truth_path, competition.scoring_script.path)
     
     if competition.task_type == TaskType.CLASSIFICATION:
-        return ClassificationScoringEngine(ground_truth_path, metric_type)
+        return ClassificationScoringEngine(
+            ground_truth_path, metric_type, competition.metric_target_class
+        )
     elif competition.task_type == TaskType.DETECTION:
         return DetectionScoringEngine(ground_truth_path, metric_type)
     elif competition.task_type == TaskType.SEGMENTATION:
